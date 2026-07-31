@@ -6,10 +6,45 @@
     <title>Solicitud de Mantenimiento Correctivo - BOLPAR S.A.</title>
 
     <!-- Meta etiquetas PWA -->
-    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Generación e inyección dinámica del Manifest PWA -->
+    <script>
+        (function() {
+            const manifestData = {
+                "short_name": "BOLPAR Mant.",
+                "name": "Solicitud de Mantenimiento Correctivo - BOLPAR S.A.",
+                "icons": [
+                    {
+                        "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png",
+                        "type": "image/png",
+                        "sizes": "192x192",
+                        "purpose": "any maskable"
+                    },
+                    {
+                        "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png",
+                        "type": "image/png",
+                        "sizes": "512x512",
+                        "purpose": "any maskable"
+                    }
+                ],
+                "start_url": "./index.html",
+                "background_color": "#2c3e50",
+                "theme_color": "#2c3e50",
+                "display": "standalone",
+                "orientation": "portrait"
+            };
+            const stringManifest = JSON.stringify(manifestData);
+            const blob = new Blob([stringManifest], {type: 'application/json'});
+            const manifestURL = URL.createObjectURL(blob);
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestURL;
+            document.getElementsByTagName('head')[0].appendChild(link);
+        })();
+    </script>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -49,9 +84,7 @@
             flex-direction: column;
             flex-shrink: 0;
         }
-        .container > * {
-            flex-shrink: 0;
-        }
+        .container > * { flex-shrink: 0; }
 
         /* --- Cabecera --- */
         .header-table {
@@ -109,12 +142,8 @@
             background: #fff;
             outline: none;
         }
-        .meta-cell {
-            font-size: 7.5pt;
-        }
-        .meta-cell div {
-            margin-bottom: 1px;
-        }
+        .meta-cell { font-size: 7.5pt; }
+        .meta-cell div { margin-bottom: 1px; }
 
         /* --- Grid principal --- */
         .grid-table {
@@ -137,8 +166,7 @@
             width: 30%;
             padding: 1px 4px;
         }
-        .value select,
-        .value input {
+        .value select, .value input {
             width: 100%;
             padding: 1px 3px;
             font-size: 8.5pt;
@@ -146,11 +174,6 @@
             border-radius: 3px;
             background-color: #fff;
             box-sizing: border-box;
-            height: 22px;
-        }
-        .value input[type="time"],
-        .value input[type="text"],
-        .value input[type="date"] {
             height: 22px;
         }
         .campo-requerido {
@@ -484,7 +507,7 @@
         }
 
         @media print {
-            .action-bar-wrapper, .btn, .btn-eliminar, #listaRegistros,
+            .action-bar-wrapper, .btn, #listaRegistros,
             #detalleRegistro, .modal-overlay, .toast, .firma-botones {
                 display: none !important;
             }
@@ -759,16 +782,52 @@
     </div>
 
     <script>
-        // --- Registro de Service Worker para PWA ---
+        // --- REGISTRO DINÁMICO DE SERVICE WORKER EN LÍNEA ---
         if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'bolpar-mantenimiento-v2';
+                const ASSETS = [
+                    './',
+                    'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
+                    'https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js',
+                    'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+                    'https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js'
+                ];
+
+                self.addEventListener('install', (e) => {
+                    e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+                    self.skipWaiting();
+                });
+
+                self.addEventListener('activate', (e) => {
+                    e.waitUntil(
+                        caches.keys().then((keys) => Promise.all(
+                            keys.map((k) => { if (k !== CACHE_NAME) return caches.delete(k); })
+                        ))
+                    );
+                    self.clients.claim();
+                });
+
+                self.addEventListener('fetch', (e) => {
+                    if (e.request.url.includes('firebaseio.com')) return;
+                    e.respondWith(
+                        caches.match(e.request).then((res) => res || fetch(e.request))
+                    );
+                });
+            `;
+            const blobSW = new Blob([swCode], { type: 'text/javascript' });
+            const swURL = URL.createObjectURL(blobSW);
+
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registrado:', reg.scope))
-                    .catch(err => console.error('Error Service Worker:', err));
+                navigator.serviceWorker.register(swURL)
+                    .then(reg => console.log('Service Worker embebido en línea activo'))
+                    .catch(err => console.error('Error con Service Worker embebido:', err));
             });
         }
 
-        // --- Configuración Firebase ---
+        // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             databaseURL: "https://solicitud-mantenimiento-bolpar-default-rtdb.firebaseio.com"
         };
@@ -777,12 +836,12 @@
         const solicitudesRef = db.ref('solicitudes_mantenimiento');
         const contadorRef = db.ref('contador_solicitudes');
 
-        // --- Variables globales ---
+        // --- VARIABLES GLOBALES ---
         let listaRegistrosCache = [];
         let detalleKeyActual = null;
         let signaturePadTecnico, signaturePadJefe;
 
-        // --- Manejo Offline y Sincronización ---
+        // --- MODO OFFLINE Y SINCRONIZACIÓN ---
         function guardarOffline(datos) {
             let colaOffline = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
             colaOffline.push(datos);
@@ -827,7 +886,7 @@
             mostrarToast('⚠️ Trabajando sin conexión a Internet.', 'error');
         });
 
-        // --- Firma Digital ---
+        // --- FIRMA DIGITAL ---
         function initSignaturePads() {
             const canvasTec = document.getElementById('firmaTecnico');
             const canvasJefe = document.getElementById('firmaJefe');
@@ -863,7 +922,6 @@
             pad.fromDataURL(dataURL);
         }
 
-        // Resguardar trazos al redimensionar pantalla
         window.addEventListener('resize', () => {
             [
                 { pad: signaturePadTecnico, canvas: document.getElementById('firmaTecnico') },
@@ -881,7 +939,7 @@
             });
         });
 
-        // --- Números y Correlativos ---
+        // --- CORRELATIVO Y CONTADOR ---
         function obtenerProximoNumero(callback) {
             if (!navigator.onLine) {
                 callback(Math.floor(Math.random() * 900) + 100);
@@ -891,13 +949,9 @@
                 if (current === null) return 1;
                 return current + 1;
             }, (error, committed, snapshot) => {
-                if (error) {
-                    callback(null);
-                } else if (committed) {
-                    callback(snapshot.val());
-                } else {
-                    callback(null);
-                }
+                if (error) callback(null);
+                else if (committed) callback(snapshot.val());
+                else callback(null);
             }, false);
         }
 
@@ -932,7 +986,7 @@
                 .catch(() => callback(false));
         }
 
-        // --- Maquinaria e Interacciones ---
+        // --- MAQUINARIA Y EVENTOS ---
         const datosMaquinas = {
             'Coteadora': { tecnico: 'Michael Pintos', jefe: 'Ángel' },
             'Impresora Flexotech 6C': { tecnico: 'Nicolás Morel', jefe: 'Julio' },
@@ -956,13 +1010,11 @@
             }
         }
 
-        // Exclusión mutua en Capacitación (Si/No)
         const capSi = document.getElementById('capSi');
         const capNo = document.getElementById('capNo');
         capSi.addEventListener('change', () => { if (capSi.checked) capNo.checked = false; });
         capNo.addEventListener('change', () => { if (capNo.checked) capSi.checked = false; });
 
-        // Auto-selección checkbox "Otros"
         document.getElementById('otroTipoSelect').addEventListener('change', function() {
             if (this.value) document.getElementById('otroTipoCheck').checked = true;
         });
@@ -970,7 +1022,7 @@
             if (this.value) document.getElementById('otraCausaCheck').checked = true;
         });
 
-        // --- Cálculos de tiempo ---
+        // --- TIEMPOS ---
         function calcularDuracion() {
             const llegada = document.getElementById('horaLlegada').value;
             const fin = document.getElementById('horaFinalizacion').value;
@@ -1012,7 +1064,6 @@
             actualizarHoraLlegada();
         }
 
-        // --- Validación ---
         function validarFormulario() {
             let valido = true;
             const maquina = document.getElementById('maquina').value;
@@ -1053,7 +1104,7 @@
             return valido;
         }
 
-        // --- Guardar ---
+        // --- GUARDADO DE DATOS ---
         async function guardarDatos() {
             if (!validarFormulario()) return;
 
@@ -1116,7 +1167,6 @@
                 timestamp: Date.now()
             };
 
-            // Manejo de guardado Offline
             if (!navigator.onLine) {
                 guardarOffline(data);
                 limpiarFormulario(true);
@@ -1149,7 +1199,7 @@
             }
         }
 
-        // --- Modales y Toasts ---
+        // --- NOTIFICACIONES ---
         function mostrarModalExito(mensaje) {
             document.getElementById('modalMensaje').textContent = mensaje;
             document.getElementById('modalExito').style.display = 'flex';
@@ -1171,7 +1221,7 @@
             window.toastTimeout = setTimeout(() => { toast.style.display = 'none'; }, 3500);
         }
 
-        // --- Visualización e Historias ---
+        // --- REGISTROS Y CONSULTAS ---
         async function cargarUltimosRegistros() {
             const contenedor = document.getElementById('listaRegistros');
             const contenido = document.getElementById('contenidoRegistros');
@@ -1273,7 +1323,6 @@
         function generarHTMLRegistro(data) {
             const num = String(data.numero_solicitud || '???').padStart(3, '0');
             const estadoClase = `estado-${(data.estado || 'Pendiente').toLowerCase().replace(' ', '')}`;
-            const ck = val => val ? 'checked' : '';
 
             return `
                 <div class="registro-card">
@@ -1359,7 +1408,7 @@
                 });
         }
 
-        // --- Exportaciones ---
+        // --- EXPORTAR ---
         async function exportarExcel() {
             mostrarToast('📊 Generando Excel...', 'info');
             try {
@@ -1434,7 +1483,7 @@
             mostrarToast('🧹 Formulario reajustado.', 'info');
         }
 
-        // --- Inicio ---
+        // --- INICIALIZACIÓN ---
         window.onload = function() {
             setFechaHoraActual();
             cargarSugerenciaNumero();
