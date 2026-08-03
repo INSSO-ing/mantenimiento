@@ -55,6 +55,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <style>
         /* --- Estilos globales --- */
@@ -562,6 +564,34 @@
         .toast-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .toast-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
 
+        /* --- Gráficos --- */
+        .graficos-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .grafico-wrapper {
+            flex: 1 1 300px;
+            min-width: 250px;
+            max-width: 450px;
+            background: #fafafa;
+            border-radius: 6px;
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .grafico-wrapper h4 {
+            text-align: center;
+            font-size: 8.5pt;
+            margin-bottom: 4px;
+            color: #2c3e50;
+        }
+        .grafico-wrapper canvas {
+            max-height: 200px;
+            max-width: 100%;
+        }
+
         /* --- Responsive --- */
         @media (max-width: 700px) {
             body { padding: 4px; font-size: 8pt; }
@@ -576,6 +606,7 @@
             .registro-item-lista .info { gap: 6px; }
             .registro-desc-preview { max-width: 130px; }
             .menu-contextual { right: 0; top: 20px; }
+            .grafico-wrapper { flex: 1 1 100%; max-width: 100%; }
         }
 
         @media print {
@@ -832,6 +863,7 @@
             </select>
         </div>
 
+        <!-- Tarjetas numéricas -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px;">
             <div style="background: #eef2f5; border-left: 4px solid #2980b9; padding: 10px; border-radius: 4px;">
                 <span style="font-size: 8pt; color: #555; font-weight: bold;">TOTAL SOLICITUDES</span>
@@ -851,6 +883,21 @@
                 <span style="font-size: 8pt; color: #555; font-weight: bold;">TIEMPO TOTAL DE PARADA</span>
                 <div id="kpiTiempoParada" style="font-size: 16pt; font-weight: bold; color: #d68910;">0 min</div>
             </div>
+        </div>
+
+        <!-- Contenedor de gráficos -->
+        <div id="graficosContainer" class="graficos-container">
+            <div class="grafico-wrapper">
+                <h4>📊 Solicitudes por Máquina</h4>
+                <canvas id="chartMaquinas"></canvas>
+            </div>
+            <div class="grafico-wrapper">
+                <h4>🍩 Distribución por Estado</h4>
+                <canvas id="chartEstados"></canvas>
+            </div>
+        </div>
+        <div id="mensajeSinDatos" style="display:none; text-align:center; padding:10px; color:#888;">
+            No hay datos para mostrar.
         </div>
     </div>
 
@@ -893,7 +940,8 @@
                     'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js',
                     'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
                     'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-                    'https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js'
+                    'https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js',
+                    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
                 ];
 
                 self.addEventListener('install', (e) => {
@@ -943,7 +991,9 @@
         let listaRegistrosCache = [];
         let detalleKeyActual = null;
         let signaturePadTecnico, signaturePadJefe;
-        let opcionesCargadas = false; // flag para evitar cargas duplicadas
+        let opcionesCargadas = false;
+        let chartMaquinas = null;
+        let chartEstados = null;
 
         // --- MODO OFFLINE Y SINCRONIZACIÓN ---
         function guardarOffline(datos) {
@@ -981,7 +1031,6 @@
             }
         }
 
-        // Sincronización de opciones offline
         function guardarOpcionesOffline(tipo, lista) {
             localStorage.setItem(`opciones_${tipo}`, JSON.stringify(lista));
         }
@@ -1002,7 +1051,6 @@
             opcionesCargadas = true;
 
             try {
-                // Intentar cargar desde Firebase
                 const [maquinasSnap, jefesSnap] = await Promise.all([
                     maquinasRef.once('value'),
                     jefesRef.once('value')
@@ -1011,7 +1059,6 @@
                 let maquinas = maquinasSnap.val();
                 let jefes = jefesSnap.val();
 
-                // Si no existen, crearlos con los valores por defecto
                 if (!maquinas || !Array.isArray(maquinas) || maquinas.length === 0) {
                     maquinas = valoresDefault.maquinas;
                     await maquinasRef.set(maquinas);
@@ -1021,13 +1068,11 @@
                     await jefesRef.set(jefes);
                 }
 
-                // Actualizar los selectores y filtros
                 actualizarSelectores(maquinas, jefes);
                 actualizarFiltroKPIs(maquinas);
                 mostrarToast('📋 Opciones cargadas desde Firebase.', 'info');
             } catch (error) {
                 console.warn('Error al cargar desde Firebase, usando localStorage o defaults.', error);
-                // Fallback a localStorage o defaults
                 let maquinas = obtenerOpcionesOffline('maquinas') || valoresDefault.maquinas;
                 let jefes = obtenerOpcionesOffline('jefes') || valoresDefault.jefes;
                 actualizarSelectores(maquinas, jefes);
@@ -1040,7 +1085,6 @@
             const selectMaquina = document.getElementById('maquina');
             const selectJefe = document.getElementById('jefeMaquina');
 
-            // Limpiar selectores (mantener la opción vacía)
             selectMaquina.innerHTML = '<option value="">-- Seleccione --</option>';
             selectJefe.innerHTML = '<option value="">-- Seleccione --</option>';
 
@@ -1061,7 +1105,6 @@
 
         function actualizarFiltroKPIs(maquinas) {
             const kpiSelect = document.getElementById('kpiFiltroMaquina');
-            // Mantener la opción "TODAS"
             const todas = kpiSelect.querySelector('option[value="TODAS"]');
             kpiSelect.innerHTML = '';
             kpiSelect.appendChild(todas);
@@ -1073,7 +1116,7 @@
             });
         }
 
-        // --- FUNCIONES PARA AÑADIR Y ELIMINAR OPCIONES (CON PERSISTENCIA) ---
+        // --- FUNCIONES PARA AÑADIR Y ELIMINAR OPCIONES ---
         function toggleMenu(selectId) {
             const menuId = selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina';
             const menu = document.getElementById(menuId);
@@ -1096,7 +1139,6 @@
             const valorTrim = nuevoValor.trim();
 
             const select = document.getElementById(selectId);
-            // Verificar duplicado localmente
             for (let opt of select.options) {
                 if (opt.value === valorTrim) {
                     alert(`La ${nombreCampo} "${valorTrim}" ya existe.`);
@@ -1104,7 +1146,6 @@
                 }
             }
 
-            // Agregar al selector local
             const option = document.createElement('option');
             option.value = valorTrim;
             option.textContent = valorTrim;
@@ -1113,7 +1154,6 @@
 
             if (selectId === 'maquina') {
                 actualizarDatosMaquina();
-                // También agregar al filtro de KPIs
                 const kpiSelect = document.getElementById('kpiFiltroMaquina');
                 const optKPI = document.createElement('option');
                 optKPI.value = valorTrim;
@@ -1121,9 +1161,7 @@
                 kpiSelect.appendChild(optKPI);
             }
 
-            // Guardar en Firebase (y offline)
             const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
-            // Obtener lista actual, añadir y guardar
             ref.transaction((current) => {
                 if (!current || !Array.isArray(current)) current = [];
                 if (!current.includes(valorTrim)) {
@@ -1135,7 +1173,6 @@
             }).catch(err => {
                 mostrarToast('❌ Error al guardar en Firebase.', 'error');
                 console.error(err);
-                // Guardar en localStorage como respaldo
                 const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
                 if (!lista.includes(valorTrim)) {
                     lista.push(valorTrim);
@@ -1155,16 +1192,13 @@
             }
             if (!confirm(`¿Eliminar la opción "${valorSeleccionado}"?`)) return;
 
-            // Eliminar del selector local
             const index = select.selectedIndex;
             select.remove(index);
             if (select.value === '') {
-                // Si quedó vacío, seleccionar el primer option si existe
                 if (select.options.length > 0) select.selectedIndex = 0;
             }
 
             if (selectId === 'maquina') {
-                // Eliminar del filtro de KPIs
                 const kpiSelect = document.getElementById('kpiFiltroMaquina');
                 for (let opt of kpiSelect.options) {
                     if (opt.value === valorSeleccionado) {
@@ -1172,13 +1206,11 @@
                         break;
                     }
                 }
-                // Si la máquina eliminada era la que estaba seleccionada en el formulario, limpiar
                 if (document.getElementById('maquina').value === valorSeleccionado) {
                     document.getElementById('maquina').value = '';
                 }
             }
 
-            // Eliminar de Firebase
             const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
             ref.transaction((current) => {
                 if (!current || !Array.isArray(current)) return current;
@@ -1192,7 +1224,6 @@
             }).catch(err => {
                 mostrarToast('❌ Error al eliminar de Firebase.', 'error');
                 console.error(err);
-                // Actualizar localStorage
                 const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
                 const idx = lista.indexOf(valorSeleccionado);
                 if (idx !== -1) {
@@ -1204,7 +1235,6 @@
             document.getElementById(selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina').classList.remove('mostrar');
         }
 
-        // Función para asegurar que una opción exista (usada en edición)
         function asegurarOpcion(selectId, valor) {
             if (!valor) return;
             const select = document.getElementById(selectId);
@@ -1213,13 +1243,11 @@
                 if (opt.value === valor) { existe = true; break; }
             }
             if (!existe) {
-                // Añadir localmente
                 const option = document.createElement('option');
                 option.value = valor;
                 option.textContent = valor;
                 select.appendChild(option);
                 select.value = valor;
-                // Añadir a Firebase
                 const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
                 ref.transaction((current) => {
                     if (!current || !Array.isArray(current)) current = [];
@@ -1229,7 +1257,6 @@
                     return current;
                 }).catch(err => {
                     console.error('Error al guardar opción asegurada:', err);
-                    // Guardar en localStorage
                     const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
                     if (!lista.includes(valor)) {
                         lista.push(valor);
@@ -1237,7 +1264,7 @@
                     }
                 });
                 if (selectId === 'maquina') {
-                    actualizarFiltroKPIs([...select.options].slice(1).map(opt => opt.value)); // actualizar filtro
+                    actualizarFiltroKPIs([...select.options].slice(1).map(opt => opt.value));
                 }
             } else {
                 select.value = valor;
@@ -1722,7 +1749,6 @@
                 const data = snapshot.val();
                 if (!data) return;
 
-                // Asegurar que máquina y jefe existan en los selectores (añadirlos si no)
                 asegurarOpcion('maquina', data.maquina);
                 asegurarOpcion('jefeMaquina', data.jefe);
 
@@ -1781,6 +1807,107 @@
                 });
         }
 
+        // --- GRÁFICOS ---
+        function destruirGraficos() {
+            if (chartMaquinas) {
+                chartMaquinas.destroy();
+                chartMaquinas = null;
+            }
+            if (chartEstados) {
+                chartEstados.destroy();
+                chartEstados = null;
+            }
+        }
+
+        function crearGraficos(datos) {
+            const container = document.getElementById('graficosContainer');
+            const mensaje = document.getElementById('mensajeSinDatos');
+
+            if (!datos || datos.length === 0) {
+                container.style.display = 'none';
+                mensaje.style.display = 'block';
+                return;
+            }
+            container.style.display = 'flex';
+            mensaje.style.display = 'none';
+
+            // Contar por máquina
+            const conteoMaquinas = {};
+            datos.forEach(r => {
+                const maq = r.maquina || 'Sin máquina';
+                conteoMaquinas[maq] = (conteoMaquinas[maq] || 0) + 1;
+            });
+            const labelsMaq = Object.keys(conteoMaquinas);
+            const dataMaq = Object.values(conteoMaquinas);
+            const coloresMaq = ['#3498db','#2ecc71','#f39c12','#e74c3c','#9b59b6','#1abc9c','#e67e22','#34495e'];
+
+            // Contar por estado
+            const conteoEstados = {};
+            datos.forEach(r => {
+                const est = r.estado || 'Finalizada';
+                conteoEstados[est] = (conteoEstados[est] || 0) + 1;
+            });
+            const labelsEst = Object.keys(conteoEstados);
+            const dataEst = Object.values(conteoEstados);
+            const coloresEst = {
+                'Finalizada': '#2ecc71',
+                'Pendiente': '#f1c40f',
+                'En curso': '#3498db',
+                'Cancelada': '#e74c3c'
+            };
+            const bgEst = labelsEst.map(l => coloresEst[l] || '#95a5a6');
+
+            // Gráfico de barras (máquinas)
+            const ctxMaq = document.getElementById('chartMaquinas').getContext('2d');
+            chartMaquinas = new Chart(ctxMaq, {
+                type: 'bar',
+                data: {
+                    labels: labelsMaq,
+                    datasets: [{
+                        label: 'Cantidad de solicitudes',
+                        data: dataMaq,
+                        backgroundColor: coloresMaq.slice(0, labelsMaq.length),
+                        borderColor: '#2c3e50',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw} solicitud(es)` } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+
+            // Gráfico de dona (estados)
+            const ctxEst = document.getElementById('chartEstados').getContext('2d');
+            chartEstados = new Chart(ctxEst, {
+                type: 'doughnut',
+                data: {
+                    labels: labelsEst,
+                    datasets: [{
+                        data: dataEst,
+                        backgroundColor: bgEst,
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} (${((ctx.raw/datos.length)*100).toFixed(1)}%)` } }
+                    }
+                }
+            });
+        }
+
         // --- CÁLCULO DE KPIS ---
         async function mostrarKPIs() {
             document.getElementById('seccionKPIs').style.display = 'block';
@@ -1790,6 +1917,7 @@
 
         function cerrarKPIs() {
             document.getElementById('seccionKPIs').style.display = 'none';
+            destruirGraficos();
         }
 
         async function calcularKPIs() {
@@ -1799,6 +1927,9 @@
                 
                 if (!registros) {
                     actualizarTarjetasKPI(0, 0, 0, 0);
+                    destruirGraficos();
+                    document.getElementById('mensajeSinDatos').style.display = 'block';
+                    document.getElementById('graficosContainer').style.display = 'none';
                     return;
                 }
 
@@ -1826,16 +1957,18 @@
                     if (timestamps.length >= 2) {
                         const primerRegistro = timestamps[0];
                         const ultimoRegistro = timestamps[timestamps.length - 1];
-                        
                         const horasTranscurridas = (ultimoRegistro - primerRegistro) / (1000 * 60 * 60);
                         const horasParada = tiempoParadaTotal / 60;
                         const horasOperativas = Math.max(0, horasTranscurridas - horasParada);
-
                         mtbfHoras = (horasOperativas / totalFallas).toFixed(1);
                     }
                 }
 
                 actualizarTarjetasKPI(totalFallas, mttr, mtbfHoras, tiempoParadaTotal);
+
+                // Crear gráficos con los datos filtrados
+                destruirGraficos();
+                crearGraficos(filtrados);
 
             } catch (error) {
                 console.error("Error al calcular KPIs:", error);
@@ -1931,7 +2064,7 @@
             cargarSugerenciaNumero();
             initSignaturePads();
             sincronizarDatosOffline();
-            cargarOpciones(); // Cargar opciones desde Firebase
+            cargarOpciones();
         };
     </script>
 </body>
