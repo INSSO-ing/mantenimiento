@@ -842,6 +842,7 @@
             <button class="btn btn-primary" onclick="mostrarKPIs()">📈 VER KPIS</button>
             <button class="btn btn-warning" onclick="exportarExcel()">📊 EXCEL</button>
             <button class="btn btn-primary" onclick="exportarPDF()">📄 PDF</button>
+            <button class="btn btn-secondary" onclick="probarConexion()" style="background:#6c757d;color:white;">🔌 PROBAR CONEXIÓN</button>
         </div>
         <div class="btn-group">
             <button class="btn btn-danger" onclick="limpiarFormulario()">🗑️ LIMPIAR</button>
@@ -983,7 +984,6 @@
         const db = firebase.database();
         const solicitudesRef = db.ref('solicitudes_mantenimiento');
         const contadorRef = db.ref('contador_solicitudes');
-        // Nuevas referencias para las opciones
         const maquinasRef = db.ref('maquinas');
         const jefesRef = db.ref('jefes');
 
@@ -994,6 +994,25 @@
         let opcionesCargadas = false;
         let chartMaquinas = null;
         let chartEstados = null;
+
+        // --- FUNCIÓN PARA PROBAR CONEXIÓN ---
+        function probarConexion() {
+            mostrarToast('🔌 Probando conexión a Firebase...', 'info');
+            solicitudesRef.once('value')
+                .then(snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const count = Object.keys(data).length;
+                        mostrarToast(`✅ Conexión exitosa. ${count} registros encontrados.`, 'success');
+                    } else {
+                        mostrarToast('✅ Conexión exitosa. No hay registros aún.', 'info');
+                    }
+                })
+                .catch(err => {
+                    mostrarToast(`❌ Error de conexión: ${err.message}`, 'error');
+                    console.error('Error de Firebase:', err);
+                });
+        }
 
         // --- MODO OFFLINE Y SINCRONIZACIÓN ---
         function guardarOffline(datos) {
@@ -1640,7 +1659,8 @@
                 listaRegistrosCache = items;
                 renderizarLista(items);
             } catch (error) {
-                contenido.innerHTML = '<p>❌ Error al cargar registros.</p>';
+                console.error("Error cargando registros:", error);
+                contenido.innerHTML = `<p>❌ Error al cargar registros: ${error.message}</p>`;
             }
         }
 
@@ -1972,7 +1992,7 @@
 
             } catch (error) {
                 console.error("Error al calcular KPIs:", error);
-                mostrarToast("❌ Error al calcular KPIs", "error");
+                mostrarToast("❌ Error al calcular KPIs: " + error.message, "error");
             }
         }
 
@@ -2007,7 +2027,7 @@
                 XLSX.writeFile(wb, 'Solicitudes_BOLPAR.xlsx');
                 mostrarToast('✅ Excel exportado.', 'success');
             } catch (err) {
-                mostrarToast('❌ Error exportando Excel', 'error');
+                mostrarToast('❌ Error exportando Excel: ' + err.message, 'error');
             }
         }
 
@@ -2029,7 +2049,7 @@
 
                 botonesFirma.forEach(el => el.style.display = 'flex');
             } catch (err) {
-                mostrarToast('❌ Error exportando PDF', 'error');
+                mostrarToast('❌ Error exportando PDF: ' + err.message, 'error');
             }
         }
 
@@ -2065,6 +2085,8 @@
             initSignaturePads();
             sincronizarDatosOffline();
             cargarOpciones();
+            // Prueba automática de conexión al cargar (solo en consola)
+            console.log('✅ App lista. Para probar conexión, usa el botón "PROBAR CONEXIÓN".');
         };
     </script>
 </body>
