@@ -51,8 +51,11 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <!-- SheetJS para Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <!-- Librerías para firma digital y gráficos -->
+    <!-- Librerías para PDF y firma digital -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <style>
@@ -598,8 +601,6 @@
         .btn-danger:hover { background-color: #922b21; }
         .btn-primary { background-color: #2c3e50; color: white; }
         .btn-primary:hover { background-color: #1a2a3a; }
-        .btn-secondary { background-color: #6c757d; color: white; }
-        .btn-secondary:hover { background-color: #5a6268; }
         .btn-sm { padding: 2px 8px; font-size: 7.5pt; }
 
         /* --- Modal de Previsualización IA y Modales Custom --- */
@@ -786,7 +787,7 @@
             align-items: center;
         }
         .registro-item-lista .nro { font-weight: bold; min-width: 50px; }
-
+        
         .registro-desc-preview {
             background-color: #f1f5f9;
             color: #334155;
@@ -1056,7 +1057,7 @@
         </div>
     </div>
 
-    <!-- Modal genérico para Entrada / Confirmación -->
+    <!-- Modal genérico para Entrada / Confirmación (Reemplazo seguro de alert/prompt/confirm) -->
     <div class="modal-overlay" id="modalDialogoCustom">
         <div class="modal-content">
             <h3 id="dialogoTitulo" style="margin-bottom: 8px; color: #2c3e50;">Confirmación</h3>
@@ -1284,7 +1285,9 @@
             <button class="btn btn-success" id="btnGuardar" onclick="guardarDatos()">💾 GUARDAR</button>
             <button class="btn btn-info" onclick="cargarUltimosRegistros()">📋 VER REGISTROS</button>
             <button class="btn btn-primary" onclick="mostrarKPIs()">📈 VER KPIS</button>
-            <button class="btn btn-warning" onclick="exportarExcel()">📊 EXCEL + IA</button>
+            <button class="btn btn-warning" onclick="exportarExcel()">📊 EXCEL</button>
+            <button class="btn btn-primary" onclick="exportarPDF()">📄 PDF</button>
+            <button class="btn btn-secondary" onclick="probarConexion()" style="background:#6c757d;color:white;">🔌 PROBAR CONEXIÓN</button>
         </div>
         <div class="btn-group">
             <button class="btn btn-danger" onclick="limpiarFormulario()">🗑️ LIMPIAR</button>
@@ -1341,17 +1344,6 @@
         <div id="mensajeSinDatos" style="display:none; text-align:center; padding:10px; color:#888;">
             No hay datos para mostrar.
         </div>
-
-        <!-- Análisis Inteligente IA de KPIs -->
-        <div id="analisisIA" style="margin-top: 15px; background: linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%); border: 2px solid #3b82f6; border-radius: 8px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(59,130,246,0.10);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                <h4 style="margin: 0; color: #1e40af; font-size: 10pt;">🤖 Análisis Inteligente de KPIs</h4>
-                <button class="btn btn-sm btn-info" onclick="generarAnalisisIA()">🔄 Regenerar Análisis</button>
-            </div>
-            <div id="contenidoAnalisisIA" style="font-size: 8.5pt; line-height: 1.55; color: #1e293b;">
-                <em style="color:#64748b;">El análisis se generará automáticamente al abrir los KPIs o cambiar el filtro...</em>
-            </div>
-        </div>
     </div>
 
     <!-- Lista de registros -->
@@ -1382,6 +1374,52 @@
     </div>
 
     <script>
+        // --- REGISTRO DINÁMICO DE SERVICE WORKER EN LÍNEA ---
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'bolpar-mantenimiento-v4';
+                const ASSETS = [
+                    './',
+                    'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
+                    'https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js',
+                    'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+                    'https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js',
+                    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
+                ];
+
+                self.addEventListener('install', (e) => {
+                    e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+                    self.skipWaiting();
+                });
+
+                self.addEventListener('activate', (e) => {
+                    e.waitUntil(
+                        caches.keys().then((keys) => Promise.all(
+                            keys.map((k) => { if (k !== CACHE_NAME) return caches.delete(k); })
+                        ))
+                    );
+                    self.clients.claim();
+                });
+
+                self.addEventListener('fetch', (e) => {
+                    if (e.request.url.includes('firebaseio.com') || e.request.url.includes('googleapis.com')) return;
+                    e.respondWith(
+                        caches.match(e.request).then((res) => res || fetch(e.request))
+                    );
+                });
+            `;
+            const blobSW = new Blob([swCode], { type: 'text/javascript' });
+            const swURL = URL.createObjectURL(blobSW);
+
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(swURL)
+                    .then(() => console.log('Service Worker activo'))
+                    .catch(err => console.error('Error con Service Worker:', err));
+            });
+        }
+
         // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             databaseURL: "https://solicitud-mantenimiento-bolpar-default-rtdb.firebaseio.com"
@@ -1404,50 +1442,59 @@
         // Variables de Voz e IA
         let recognition = null;
         let escuchandoVoz = false;
-        let textoAcumuladoVoz = '';
+        let textoBaseAntesDeDictar = '';
 
-        // --- MODALES DE DIÁLOGO PERSONALIZADOS ---
-        function abrirDialogoCustom({ titulo, mensaje, conInput = false, placeholder = '' }) {
-            return new Promise((resolve) => {
-                const overlay = document.getElementById('modalDialogoCustom');
-                const elTitulo = document.getElementById('dialogoTitulo');
-                const elMensaje = document.getElementById('dialogoMensaje');
-                const elInput = document.getElementById('dialogoInput');
-                const btnAceptar = document.getElementById('btnDialogoAceptar');
-                const btnCancelar = document.getElementById('btnDialogoCancelar');
+        // --- MODALES DE DIÁLOGO PERSONALIZADOS (Sustituyen alert/confirm/prompt) ---
+        // --- STREAMING_CHUNK:Implementing anti-duplication Web Speech API voice recognition and smart text cleaner... ---
+        // --- LIMPIADOR DE REPETICIONES EN CASCADA (Anti-eco de Android / Chrome) ---
+        function limpiarTextoRepetido(texto) {
+            if (!texto) return '';
+            let limpio = texto.replace(/\s+/g, ' ').trim();
 
-                elTitulo.textContent = titulo || 'Confirmación';
-                elMensaje.textContent = mensaje || '';
-                if (conInput) {
-                    elInput.style.display = 'block';
-                    elInput.value = '';
-                    elInput.placeholder = placeholder;
-                    setTimeout(() => elInput.focus(), 50);
-                } else {
-                    elInput.style.display = 'none';
+            // 1. Eliminar palabras idénticas consecutivas ("salida salida salida" -> "salida")
+            limpio = limpio.replace(/\b(\S+)(?:\s+\1\b)+/gi, '$1');
+
+            // 2. Detectar y colapsar acumulación progresiva ("máquina máquina línea máquina línea 4...")
+            const palabras = limpio.split(' ');
+            const norm = (w) => w ? w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,;:]/g, '') : '';
+
+            let resultado = [];
+            let i = 0;
+            while (i < palabras.length) {
+                let saltoRealizado = false;
+                const maxLen = Math.min(25, Math.floor((palabras.length - i) / 2));
+
+                for (let len = maxLen; len >= 1; len--) {
+                    let coincidePrefijo = true;
+                    for (let k = 0; k < len; k++) {
+                        if (norm(palabras[i + k]) !== norm(palabras[i + len + k])) {
+                            coincidePrefijo = false;
+                            break;
+                        }
+                    }
+                    if (coincidePrefijo) {
+                        // Omitir el fragmento parcial anterior y quedarse con la versión más completa que le sigue
+                        i += len;
+                        saltoRealizado = true;
+                        break;
+                    }
                 }
+                if (!saltoRealizado) {
+                    resultado.push(palabras[i]);
+                    i++;
+                }
+            }
 
-                overlay.style.display = 'flex';
-
-                const limpiarEventos = () => {
-                    overlay.style.display = 'none';
-                    btnAceptar.onclick = null;
-                    btnCancelar.onclick = null;
-                };
-
-                btnAceptar.onclick = () => {
-                    const val = conInput ? elInput.value : true;
-                    limpiarEventos();
-                    resolve(val);
-                };
-                btnCancelar.onclick = () => {
-                    limpiarEventos();
-                    resolve(conInput ? null : false);
-                };
-            });
+            let textoFinal = resultado.join(' ');
+            // Segunda pasada para limpiar frases repetidas exactas de 2 a 6 palabras
+            for (let n = 6; n >= 2; n--) {
+                const regexFrase = new RegExp(`\\b((?:\\S+\\s+){${n - 1}}\\S+)(?:\\s+\\1\\b)+`, 'gi');
+                textoFinal = textoFinal.replace(regexFrase, '$1');
+            }
+            return textoFinal.trim();
         }
 
-        // --- RECONOCIMIENTO DE VOZ (WEB SPEECH API) ---
+        // --- RECONOCIMIENTO DE VOZ (WEB SPEECH API SIN DUPLICACIÓN) ---
         function inicializarReconocimientoVoz() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -1461,20 +1508,36 @@
             rec.onstart = () => {
                 escuchandoVoz = true;
                 actualizarBotonMic(true);
-                mostrarToast('🎙️ Escuchando... Habla ahora para dictar los datos.', 'info');
+                mostrarToast('🎙️ Escuchando... Habla con normalidad.', 'info');
             };
 
             rec.onresult = (event) => {
-                let interino = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        textoAcumuladoVoz += event.results[i][0].transcript + ' ';
-                    } else {
-                        interino += event.results[i][0].transcript;
+                // Reconstruir desde cero sobre event.results evitando concatenar resultados acumulativos repetidos en móviles
+                let segmentos = [];
+                for (let i = 0; i < event.results.length; ++i) {
+                    const t = event.results[i][0].transcript.trim();
+                    if (!t) continue;
+
+                    if (segmentos.length > 0) {
+                        const prev = segmentos[segmentos.length - 1];
+                        const tNorm = t.toLowerCase();
+                        const prevNorm = prev.toLowerCase();
+
+                        // En Android Chrome cada resultado nuevo a veces ya incluye todo el texto anterior
+                        if (tNorm.startsWith(prevNorm)) {
+                            segmentos[segmentos.length - 1] = t;
+                            continue;
+                        }
+                        if (prevNorm.startsWith(tNorm)) {
+                            continue;
+                        }
                     }
+                    segmentos.push(t);
                 }
+
+                const transcripcionSesion = limpiarTextoRepetido(segmentos.join(' '));
                 const textarea = document.getElementById('textoComandoVoz');
-                textarea.value = (textoAcumuladoVoz + interino).trim();
+                textarea.value = (textoBaseAntesDeDictar + (textoBaseAntesDeDictar && transcripcionSesion ? ' ' : '') + transcripcionSesion).trim();
             };
 
             rec.onerror = (event) => {
@@ -1489,6 +1552,10 @@
             rec.onend = () => {
                 escuchandoVoz = false;
                 actualizarBotonMic(false);
+                const textarea = document.getElementById('textoComandoVoz');
+                if (textarea.value) {
+                    textarea.value = limpiarTextoRepetido(textarea.value);
+                }
             };
 
             return rec;
@@ -1508,10 +1575,13 @@
                 recognition.stop();
                 escuchandoVoz = false;
                 actualizarBotonMic(false);
-                mostrarToast('⏹️ Dictado finalizado. Pulsa "Analizar y Previsualizar".', 'info');
+                const textarea = document.getElementById('textoComandoVoz');
+                textarea.value = limpiarTextoRepetido(textarea.value);
+                mostrarToast('⏹️ Dictado finalizado y depurado. Pulsa "Analizar y Previsualizar".', 'info');
             } else {
-                const actual = document.getElementById('textoComandoVoz').value.trim();
-                textoAcumuladoVoz = actual ? actual + ' ' : '';
+                const textarea = document.getElementById('textoComandoVoz');
+                textarea.value = limpiarTextoRepetido(textarea.value);
+                textoBaseAntesDeDictar = textarea.value.trim();
                 try {
                     recognition.start();
                 } catch (e) {
@@ -1536,7 +1606,7 @@
         }
 
         function limpiarTextoVoz() {
-            textoAcumuladoVoz = '';
+            textoBaseAntesDeDictar = '';
             document.getElementById('textoComandoVoz').value = '';
             mostrarToast('🧹 Texto de comando limpiado.', 'info');
         }
@@ -1546,16 +1616,16 @@
             if (num === 1) {
                 textarea.value = "En la máquina Impresora Flexotech 6C hubo un problema eléctrico y de ajuste operacional por mal ajuste. El técnico Nicolás Morel con el jefe Julio revisaron el sensor de registro, calibraron el servomotor principal y limpiaron contactos. Empezó a las 10:15 y terminó a las 11:05. Sí se realizó la capacitación al operador.";
             } else {
-                textarea.value = "Solicitud para la Coteadora con el jefe Ángel y el técnico Michael Pintos. Falla mecánica por desgaste y falta de lubricación. Se reemplazó cadena de transmisión secundaria y se engrasaron los rodamientos del cabezal. Hora de solicitud 14:00, finalizó a las 15:20. No se realizó capacitación.";
+                textarea.value = "Máquina Línea 4, técnico Michael Pintos, jefe de máquina Fabricio, descripción trabajo ajuste de correa, hora de finalización 14:25.";
             }
-            textoAcumuladoVoz = textarea.value + ' ';
+            textoBaseAntesDeDictar = textarea.value;
             mostrarToast('✨ Ejemplo cargado. Pulsa "Analizar y Previsualizar".', 'info');
         }
 
-        // --- PROCESAMIENTO CON IA (GEMINI API + FALLBACK LOCAL) ---
+        // --- PROCESAMIENTO CON IA (GEMINI API + FALLBACK INTELIGENTE LOCAL) ---
         async function llamarGeminiConReintentos(payload, maxRetries = 3) {
-            const apiKey = "";   // ← pega aquí tu API key si vas a usar Gemini
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
             let delay = 1000;
 
             for (let intento = 0; intento < maxRetries; intento++) {
@@ -1582,12 +1652,17 @@
                 actualizarBotonMic(false);
             }
 
-            const comando = document.getElementById('textoComandoVoz').value.trim();
-            if (!comando) {
+            const textarea = document.getElementById('textoComandoVoz');
+            const comandoBruto = textarea.value.trim();
+            if (!comandoBruto) {
                 mostrarToast('⚠️ Primero dicta o escribe las instrucciones de mantenimiento.', 'error');
-                document.getElementById('textoComandoVoz').focus();
+                textarea.focus();
                 return;
             }
+
+            // Limpiar automáticamente repeticiones del micrófono antes de enviarlo a la IA
+            const comando = limpiarTextoRepetido(comandoBruto);
+            textarea.value = comando;
 
             const btn = document.getElementById('btnProcesarIA');
             btn.disabled = true;
@@ -1602,13 +1677,14 @@
 
             try {
                 const systemPrompt = `Eres un asistente experto en mantenimiento industrial para la planta BOLPAR S.A.
-Analiza el texto dictado por el usuario y extrae los campos para completar la Solicitud de Mantenimiento Correctivo.
+Analiza el texto dictado por voz por el usuario y extrae los campos para completar la Solicitud de Mantenimiento Correctivo.
+NOTA CRÍTICA SOBRE DICTADO POR VOZ: El texto puede tener palabras repetidas por eco del micrófono o errores fonéticos (ej. "ahora de finalización 1425" significa "hora de finalización 14:25", "Michael pinto" es "Michael Pintos"). Ignora las repeticiones y extrae el dato limpio.
 Reglas importantes:
-1. Opciones de máquinas conocidas: ${JSON.stringify(listaMaquinas)}. Si el usuario nombra una máquina parecida (ej. "flexo" -> "Impresora Flexotech 6C", "fondera uno" -> "Fondera 1", "linea tres" -> "Linea 3"), devuelve el nombre exacto de la lista. Si menciona una máquina nueva, devuelve su nombre capitalizado.
-2. Opciones de técnicos conocidos: ${JSON.stringify(listaTecnicos)}. Si menciona solo "Michael" o "Pintos" usa "Michael Pintos". Si menciona "Nicolás" o "Morel" usa "Nicolás Morel".
-3. Opciones de jefes conocidos: ${JSON.stringify(listaJefes)}. Haz coincidir con el nombre más cercano de la lista.
-4. Horas en formato 24h "HH:MM". Si no se menciona un campo, devuelve cadena vacía "" o false.
-5. En "descripcion", redacta de forma profesional, clara y técnica los trabajos realizados mencionados en el dictado.
+1. Opciones de máquinas conocidas: ${JSON.stringify(listaMaquinas)}. Si el usuario nombra una máquina parecida (ej. "flexo" -> "Impresora Flexotech 6C", "fondera uno" -> "Fondera 1", "linea 3" -> "Linea 3"), devuelve el nombre exacto de la lista. Si menciona una máquina que no está en la lista (ej. "Línea 4" o "Linea 4"), devuélvela limpia como "Linea 4".
+2. Opciones de técnicos conocidos: ${JSON.stringify(listaTecnicos)}. Si menciona "Michael", "Pinto" o "Pintos" usa "Michael Pintos". Si menciona "Nicolás" o "Morel" usa "Nicolás Morel".
+3. Opciones de jefes conocidos: ${JSON.stringify(listaJefes)}. Si menciona un jefe nuevo (ej. "Fabricio"), devuelve "Fabricio".
+4. Horas en formato 24h "HH:MM". Convierte números juntos como "1425" o "14 25" a "14:25", y "830" a "08:30". Si dice "hora de salida" o "hora de finalización", ponlo en "hora_finalizacion".
+5. En "descripcion", redacta únicamente el trabajo técnico limpio realizado (por ejemplo: "Ajuste de correa"), sin incluir las palabras "máquina", "técnico", "jefe" ni horas ni repeticiones.
 6. Fecha actual de referencia: ${fechaHoy}.`;
 
                 const payload = {
@@ -1664,56 +1740,99 @@ Reglas importantes:
 
         // Analizador semántico local de respaldo (por si no hay internet o falla la red)
         function analizarComandoLocalmente(texto, listaMaquinas, listaJefes) {
-            const t = texto.toLowerCase();
+            const textoLimpio = limpiarTextoRepetido(texto);
+            const t = textoLimpio.toLowerCase();
             const res = {
                 maquina: '', tecnico: '', jefe: '', fecha: '',
                 hora_solicitud: '', hora_llegada: '', hora_finalizacion: '',
                 estado: 'Finalizada',
-                mecanico: /mec[aá]nic/.test(t),
-                electrico: /el[eé]ctric/.test(t),
-                hidraulico: /hidr[aá]ulic/.test(t),
+                mecanico: /mec[aá]nic|correa|rodamiento|cadena|engranaje/.test(t),
+                electrico: /el[eé]ctric|sensor|cable|motor|contacto/.test(t),
+                hidraulico: /hidr[aá]ulic|bomba|aceite|manguera/.test(t),
                 instalaciones: /instalaci[oó]n/.test(t),
-                ajuste: /ajuste operacional|ajuste de m[aá]quina/.test(t),
+                ajuste: /ajuste/.test(t),
                 otro_tipo: '',
                 desgaste: /desgaste/.test(t),
                 mal_ajuste: /mal ajuste|desajust/.test(t),
                 otra_causa: '',
                 capacitacion: '',
-                descripcion: texto.trim()
+                descripcion: ''
             };
 
-            // Buscar máquina
+            // 1. Buscar máquina en la lista o detectar "Línea X / Fondera X / Tubera X"
             for (const m of listaMaquinas) {
                 if (t.includes(m.toLowerCase())) { res.maquina = m; break; }
             }
             if (!res.maquina) {
-                if (t.includes('flexo')) res.maquina = 'Impresora Flexotech 6C';
-                else if (t.includes('fondera uno') || t.includes('fondera 1')) res.maquina = 'Fondera 1';
-                else if (t.includes('fondera dos') || t.includes('fondera 2')) res.maquina = 'Fondera 2';
-                else if (t.includes('tubera uno') || t.includes('tubera 1')) res.maquina = 'Tubera 1';
-                else if (t.includes('tubera dos') || t.includes('tubera 2')) res.maquina = 'Tubera 2';
-                else if (t.includes('linea tres') || t.includes('línea 3') || t.includes('linea 3')) res.maquina = 'Linea 3';
+                const matchLinea = textoLimpio.match(/l[ií]nea\s*(\d+)/i);
+                const matchFondera = textoLimpio.match(/fondera\s*(\d+)/i);
+                const matchTubera = textoLimpio.match(/tubera\s*(\d+)/i);
+                if (matchLinea) res.maquina = `Linea ${matchLinea[1]}`;
+                else if (matchFondera) res.maquina = `Fondera ${matchFondera[1]}`;
+                else if (matchTubera) res.maquina = `Tubera ${matchTubera[1]}`;
+                else if (t.includes('flexo')) res.maquina = 'Impresora Flexotech 6C';
             }
 
-            // Buscar técnico
-            if (t.includes('michael') || t.includes('pintos')) res.tecnico = 'Michael Pintos';
+            // 2. Buscar técnico
+            if (t.includes('michael') || t.includes('pinto')) res.tecnico = 'Michael Pintos';
             else if (t.includes('nicol') || t.includes('morel')) res.tecnico = 'Nicolás Morel';
 
-            // Buscar jefe
+            // 3. Buscar jefe en la lista o capturar nombre después de "jefe [de máquina]"
             for (const j of listaJefes) {
                 const jSinAcento = j.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 const tSinAcento = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 if (tSinAcento.includes(jSinAcento)) { res.jefe = j; break; }
             }
-
-            // Horas (ej: 08:30, 14:15)
-            const horasMatch = texto.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g);
-            if (horasMatch && horasMatch.length >= 1) {
-                const padHora = (h) => h.split(':').map(p => p.padStart(2, '0')).join(':');
-                res.hora_solicitud = padHora(horasMatch[0]);
-                if (horasMatch.length >= 2) {
-                    res.hora_finalizacion = padHora(horasMatch[horasMatch.length - 1]);
+            if (!res.jefe) {
+                const matchJefeNuevo = textoLimpio.match(/jefe(?:\s+de)?(?:\s+m[aá]quina)?\s+([a-záéíóúñ]+)/i);
+                if (matchJefeNuevo && !['descripcion', 'descripción', 'trabajo', 'hora', 'ahora', 'salida'].includes(matchJefeNuevo[1].toLowerCase())) {
+                    const nombreJefe = matchJefeNuevo[1];
+                    res.jefe = nombreJefe.charAt(0).toUpperCase() + nombreJefe.slice(1).toLowerCase();
                 }
+            }
+
+            // 4. Extraer horas (soporta formato "14:25", "14 25" y números seguidos de 4 dígitos como "1425")
+            const normalizarHora = (h, m) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+            // Buscar específicamente hora de finalización / salida
+            const matchFin = t.match(/(?:finalizaci[oó]n|salida|termin[oó]|fin)\s*(?:a\s*las\s*)?([01]?\d|2[0-3])[:\s]?([0-5]\d)\b/);
+            if (matchFin) {
+                res.hora_finalizacion = normalizarHora(matchFin[1], matchFin[2]);
+            }
+
+            // Buscar hora de solicitud / inicio
+            const matchSol = t.match(/(?:solicitud|inicio|empez[oó])\s*(?:a\s*las\s*)?([01]?\d|2[0-3])[:\s]?([0-5]\d)\b/);
+            if (matchSol) {
+                res.hora_solicitud = normalizarHora(matchSol[1], matchSol[2]);
+            }
+
+            // Si no se detectó por palabra clave, buscar patrones generales de hora (HH:MM o 4 dígitos tipo 1425)
+            if (!res.hora_solicitud && !res.hora_finalizacion) {
+                const horasDosPuntos = [...textoLimpio.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)];
+                if (horasDosPuntos.length === 1) {
+                    if (/salida|finalizaci[oó]n|fin/.test(t)) {
+                        res.hora_finalizacion = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
+                    } else {
+                        res.hora_solicitud = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
+                    }
+                } else if (horasDosPuntos.length >= 2) {
+                    res.hora_solicitud = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
+                    res.hora_finalizacion = normalizarHora(horasDosPuntos[horasDosPuntos.length - 1][1], horasDosPuntos[horasDosPuntos.length - 1][2]);
+                } else {
+                    const matchCuatroDigitos = textoLimpio.match(/\b([01]\d|2[0-3])([0-5]\d)\b/);
+                    if (matchCuatroDigitos) {
+                        res.hora_finalizacion = normalizarHora(matchCuatroDigitos[1], matchCuatroDigitos[2]);
+                    }
+                }
+            }
+
+            // 5. Extraer solo la descripción del trabajo realizado
+            const matchDesc = textoLimpio.match(/(?:descripci[oó]n(?:\s+del)?(?:\s+trabajo)?|trabajo(?:\s+realizado)?)\s+(.+?)(?=\s+(?:salida|hora|ahora|finalizaci[oó]n|termin[oó]|capacitaci[oó]n)|$)/i);
+            if (matchDesc && matchDesc[1]) {
+                const d = matchDesc[1].trim();
+                res.descripcion = d.charAt(0).toUpperCase() + d.slice(1);
+            } else {
+                res.descripcion = textoLimpio;
             }
 
             // Otros tipos y causas
@@ -1737,6 +1856,7 @@ Reglas importantes:
             return res;
         }
 
+        // --- STREAMING_CHUNK:Configuring interactive AI preview modal logic... -->
         // --- FUNCIONES DEL MODAL DE PREVISUALIZACIÓN IA ---
         function sincronizarSelectoresPrevisualizacion() {
             const selMaqOrig = document.getElementById('maquina');
@@ -1759,6 +1879,7 @@ Reglas importantes:
             sincronizarSelectoresPrevisualizacion();
             document.getElementById('prevTranscripcionTexto').textContent = comandoOriginal;
 
+            // Si la IA detectó máquina y no se especificó técnico/jefe, autocompletar según mapa de planta
             let maquinaVal = iaData.maquina || document.getElementById('maquina').value;
             let tecnicoVal = iaData.tecnico || '';
             let jefeVal = iaData.jefe || '';
@@ -1768,6 +1889,7 @@ Reglas importantes:
                 if (!jefeVal) jefeVal = datosMaquinas[maquinaVal].jefe;
             }
 
+            // Asegurar opción en el select de previsualización si es nueva
             if (maquinaVal) {
                 const selM = document.getElementById('prevMaquina');
                 if (![...selM.options].some(o => o.value === maquinaVal)) {
@@ -1874,7 +1996,7 @@ Reglas importantes:
             const el = document.getElementById(idElemento);
             if (!el) return;
             el.classList.remove('campo-actualizado-ia');
-            void el.offsetWidth;
+            void el.offsetWidth; // Reflow
             el.classList.add('campo-actualizado-ia');
         }
 
@@ -1966,6 +2088,26 @@ Reglas importantes:
             mostrarToast('✅ Datos verificados y aplicados al formulario con éxito.', 'success');
         }
 
+        // --- STREAMING_CHUNK:Implementing Firebase data management and offline sync... -->
+        // --- FUNCIÓN PARA PROBAR CONEXIÓN ---
+        function probarConexion() {
+            mostrarToast('🔌 Probando conexión a Firebase...', 'info');
+            solicitudesRef.once('value')
+                .then(snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const count = Object.keys(data).length;
+                        mostrarToast(`✅ Conexión exitosa. ${count} registros encontrados.`, 'success');
+                    } else {
+                        mostrarToast('✅ Conexión exitosa. No hay registros aún.', 'info');
+                    }
+                })
+                .catch(err => {
+                    mostrarToast(`❌ Error de conexión: ${err.message}`, 'error');
+                    console.error('Error de Firebase:', err);
+                });
+        }
+
         // --- MODO OFFLINE Y SINCRONIZACIÓN ---
         function guardarOffline(datos) {
             let colaOffline = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
@@ -2011,7 +2153,7 @@ Reglas importantes:
             return data ? JSON.parse(data) : null;
         }
 
-        // --- CARGA Y GUARDADO DE OPCIONES ---
+        // --- FUNCIONES PARA CARGAR Y GUARDAR OPCIONES EN FIREBASE ---
         const valoresDefault = {
             maquinas: ["Coteadora", "Impresora Flexotech 6C", "Fondera 1", "Fondera 2", "Linea 3", "Tubera 1", "Tubera 2", "Cortadora", "Dobladora", "Soldadora", "Troqueladora", "Laminadora"],
             jefes: ["Ángel", "Julio", "Guillermo", "Carlos Barreto", "De los Santos", "Claudio", "Cristian", "Andy", "Alexis", "Roberto", "Mario", "Luis", "Pedro", "Hugo", "Fernando", "Ricardo"]
@@ -2087,7 +2229,8 @@ Reglas importantes:
             });
         }
 
-        // --- AÑADIR Y ELIMINAR OPCIONES ---
+        // --- STREAMING_CHUNK:Defining dynamic option selectors and signature pads... -->
+        // --- FUNCIONES PARA AÑADIR Y ELIMINAR OPCIONES ---
         function toggleMenu(selectId) {
             const menuId = selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina';
             const menu = document.getElementById(menuId);
@@ -2303,6 +2446,7 @@ Reglas importantes:
             });
         });
 
+        // --- STREAMING_CHUNK:Implementing form validation, time calculations, and record saving... -->
         // --- CORRELATIVO Y CONTADOR ---
         function obtenerProximoNumero(callback) {
             if (!navigator.onLine) {
@@ -2425,9 +2569,7 @@ Reglas importantes:
         function actualizarHoraLlegada() {
             const horaSol = document.getElementById('horaSolicitud').value;
             const llegadaInput = document.getElementById('horaLlegada');
-            if (!llegadaInput.value) {
-                llegadaInput.value = horaSol ? sumarMinutos(horaSol, 2) : '';
-            }
+            llegadaInput.value = horaSol ? sumarMinutos(horaSol, 2) : '';
             calcularDuracion();
         }
 
@@ -2576,6 +2718,7 @@ Reglas importantes:
             }
         }
 
+        // --- STREAMING_CHUNK:Handling records list, details view, KPIs, and exports... -->
         // --- NOTIFICACIONES ---
         function mostrarModalExito(mensaje) {
             document.getElementById('modalMensaje').textContent = mensaje;
@@ -2669,8 +2812,8 @@ Reglas importantes:
 
             const filtrados = listaRegistrosCache.filter(item => {
                 const numStr = String(item.numero).padStart(3, '0');
-                const matchBusqueda = numStr.includes(busqueda) ||
-                                     item.maquina.toLowerCase().includes(busqueda) ||
+                const matchBusqueda = numStr.includes(busqueda) || 
+                                     item.maquina.toLowerCase().includes(busqueda) || 
                                      item.tecnico.toLowerCase().includes(busqueda) ||
                                      item.descripcion.toLowerCase().includes(busqueda);
                 const matchEstado = estado === '' || item.estado === estado;
@@ -2712,7 +2855,7 @@ Reglas importantes:
             return `
                 <div class="registro-card">
                     <div style="font-size:10pt; font-weight:bold; background:#eaeef2; padding:3px 8px; border-left:4px solid #2c3e50; margin-bottom:4px;">
-                        📄 Solicitud Nº ${num}
+                        📄 Solicitud Nº ${num} 
                         <span class="estado-badge ${estadoClase}">${data.estado || 'Finalizada'}</span>
                     </div>
                     <table class="grid-table">
@@ -2864,7 +3007,7 @@ Reglas importantes:
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
                     plugins: {
                         legend: { display: false },
                         tooltip: { callbacks: { label: (ctx) => `${ctx.raw} solicitud(es)` } }
@@ -2889,7 +3032,7 @@ Reglas importantes:
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
                     plugins: {
                         legend: { position: 'bottom' },
                         tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} (${((ctx.raw/datos.length)*100).toFixed(1)}%)` } }
@@ -2898,7 +3041,7 @@ Reglas importantes:
             });
         }
 
-        // --- CÁLCULO DE KPIs ---
+        // --- CÁLCULO DE KPIS ---
         async function mostrarKPIs() {
             document.getElementById('seccionKPIs').style.display = 'block';
             await calcularKPIs();
@@ -2914,13 +3057,12 @@ Reglas importantes:
             try {
                 const snapshot = await solicitudesRef.once('value');
                 const registros = snapshot.val();
-
+                
                 if (!registros) {
                     actualizarTarjetasKPI(0, 0, 0, 0);
                     destruirGraficos();
                     document.getElementById('mensajeSinDatos').style.display = 'block';
                     document.getElementById('graficosContainer').style.display = 'none';
-                    document.getElementById('contenidoAnalisisIA').innerHTML = '<p style="color:#64748b;">📭 No hay datos suficientes para generar un análisis.</p>';
                     return;
                 }
 
@@ -2960,11 +3102,6 @@ Reglas importantes:
                 destruirGraficos();
                 crearGraficos(filtrados);
 
-                // Análisis IA automático (solo si la sección está visible)
-                if (document.getElementById('seccionKPIs').style.display === 'block') {
-                    generarAnalisisIA(filtrados);
-                }
-
             } catch (error) {
                 console.error("Error al calcular KPIs:", error);
                 mostrarToast("❌ Error al calcular KPIs: " + error.message, "error");
@@ -2978,313 +3115,53 @@ Reglas importantes:
             document.getElementById('kpiTiempoParada').textContent = `${parada} min (${(parada/60).toFixed(1)} hs)`;
         }
 
-        // ============================================================
-        //  🤖 ANÁLISIS INTELIGENTE CON IA (KPIs + Excel)
-        // ============================================================
-
-        // --- Genera el HTML del análisis y lo muestra en el panel de KPIs ---
-        async function generarAnalisisIA(filtrados) {
-            const contenedor = document.getElementById('contenidoAnalisisIA');
-            contenedor.innerHTML = '<em style="color:#64748b;">⏳ Generando análisis con IA...</em>';
-
-            try {
-                if (!filtrados) {
-                    const snapshot = await solicitudesRef.once('value');
-                    const registros = snapshot.val() || {};
-                    const maquinaSel = document.getElementById('kpiFiltroMaquina').value;
-                    filtrados = Object.values(registros).filter(r =>
-                        maquinaSel === 'TODAS' || r.maquina === maquinaSel
-                    );
-                }
-
-                if (filtrados.length === 0) {
-                    contenedor.innerHTML = '<p style="color:#64748b;">📭 No hay datos suficientes para generar un análisis.</p>';
-                    return;
-                }
-
-                const metricas = calcularMetricasParaIA(filtrados);
-                let htmlAnalisis = null;
-
-                try {
-                    htmlAnalisis = await generarAnalisisConGemini(metricas);
-                } catch (err) {
-                    console.warn('Fallback a análisis local:', err);
-                }
-                if (!htmlAnalisis) htmlAnalisis = generarAnalisisLocal(metricas);
-
-                contenedor.innerHTML = htmlAnalisis;
-
-            } catch (err) {
-                contenedor.innerHTML = `<p style="color:#dc2626;">❌ Error generando análisis: ${err.message}</p>`;
-            }
-        }
-
-        // --- Calcula todas las métricas y conteos que necesita la IA ---
-        function calcularMetricasParaIA(filtrados) {
-            const finalizadas = filtrados.filter(r =>
-                (r.estado === 'Finalizada' || !r.estado) && r.duracion && !isNaN(parseInt(r.duracion, 10))
-            );
-            const totalFallas = filtrados.length;
-            const tiempoParadaTotal = finalizadas.reduce((a, r) => a + parseInt(r.duracion, 10), 0);
-            const mttr = finalizadas.length > 0 ? (tiempoParadaTotal / finalizadas.length).toFixed(1) : 0;
-
-            const porMaquina = {}, porTecnico = {}, porTipo = {}, porCausa = {}, porEstado = {};
-            filtrados.forEach(r => {
-                const m = r.maquina || 'Sin asignar';
-                porMaquina[m] = (porMaquina[m] || 0) + 1;
-                const t = r.tecnico || 'Sin asignar';
-                porTecnico[t] = (porTecnico[t] || 0) + 1;
-                const e = r.estado || 'Finalizada';
-                porEstado[e] = (porEstado[e] || 0) + 1;
-
-                if (r.tipo_problema) {
-                    Object.entries(r.tipo_problema).forEach(([k, v]) => {
-                        if (v === true && k !== 'otros') porTipo[k] = (porTipo[k] || 0) + 1;
-                    });
-                    if (r.tipo_problema.otros && r.tipo_problema.otro_especificar) {
-                        porTipo[r.tipo_problema.otro_especificar] = (porTipo[r.tipo_problema.otro_especificar] || 0) + 1;
-                    }
-                }
-                if (r.causa) {
-                    Object.entries(r.causa).forEach(([k, v]) => {
-                        if (v === true && k !== 'otros') porCausa[k] = (porCausa[k] || 0) + 1;
-                    });
-                    if (r.causa.otros && r.causa.otro_especificar) {
-                        porCausa[r.causa.otro_especificar] = (porCausa[r.causa.otro_especificar] || 0) + 1;
-                    }
-                }
-            });
-
-            const ordenar = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
-            const maquinaTop = ordenar(porMaquina)[0];
-            const tecnicoTop = ordenar(porTecnico)[0];
-            const tipoTop = ordenar(porTipo)[0];
-            const causaTop = ordenar(porCausa)[0];
-
-            return {
-                maquinaFiltro: document.getElementById('kpiFiltroMaquina').value,
-                totalFallas,
-                mttr: parseFloat(mttr),
-                tiempoParadaTotal,
-                maquinaTop: maquinaTop ? { nombre: maquinaTop[0], cantidad: maquinaTop[1] } : null,
-                tecnicoTop: tecnicoTop ? { nombre: tecnicoTop[0], cantidad: tecnicoTop[1] } : null,
-                tipoTop: tipoTop ? { nombre: tipoTop[0], cantidad: tipoTop[1] } : null,
-                causaTop: causaTop ? { nombre: causaTop[0], cantidad: causaTop[1] } : null,
-                distribucionEstados: porEstado
-            };
-        }
-
-        // --- Llama a Gemini para generar el análisis en HTML ---
-        async function generarAnalisisConGemini(metricas) {
-            const apiKey = "";   // ← pega aquí tu API key si vas a usar Gemini
-            if (!apiKey) throw new Error('Sin API key configurada');
-
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-
-            const prompt = `Eres un experto en mantenimiento industrial de la planta BOLPAR S.A.
-Analiza los siguientes KPIs y devuelve un análisis CONCISO y ACCIONABLE en ESPAÑOL.
-
-DATOS:
-- Máquina filtrada: ${metricas.maquinaFiltro}
-- Total de solicitudes: ${metricas.totalFallas}
-- MTTR (tiempo medio de reparación): ${metricas.mttr} minutos
-- Tiempo total de parada: ${metricas.tiempoParadaTotal} minutos (${(metricas.tiempoParadaTotal/60).toFixed(1)} hs)
-- Máquina con más fallas: ${metricas.maquinaTop ? metricas.maquinaTop.nombre + ' (' + metricas.maquinaTop.cantidad + ')' : 'N/A'}
-- Técnico con más intervenciones: ${metricas.tecnicoTop ? metricas.tecnicoTop.nombre + ' (' + metricas.tecnicoTop.cantidad + ')' : 'N/A'}
-- Tipo de falla más común: ${metricas.tipoTop ? metricas.tipoTop.nombre + ' (' + metricas.tipoTop.cantidad + ')' : 'N/A'}
-- Causa más común: ${metricas.causaTop ? metricas.causaTop.nombre + ' (' + metricas.causaTop.cantidad + ')' : 'N/A'}
-- Distribución por estado: ${JSON.stringify(metricas.distribucionEstados)}
-
-FORMATO DE SALIDA (HTML simple, sin markdown, sin backticks):
-<div><strong>📋 Resumen ejecutivo:</strong> ...(2-3 líneas)</div>
-<div style="margin-top:8px;"><strong>🔍 Hallazgos clave:</strong><ul style="margin:4px 0 0 18px;"><li>...</li><li>...</li><li>...</li></ul></div>
-<div style="margin-top:8px;"><strong>💡 Recomendaciones:</strong><ul style="margin:4px 0 0 18px;"><li>...</li><li>...</li><li>...</li></ul></div>
-
-Máximo 300 palabras.`;
-
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const data = await response.json();
-            const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!texto) throw new Error('Respuesta vacía de Gemini');
-            return texto.replace(/```html/gi, '').replace(/```/g, '').trim();
-        }
-
-        // --- Análisis local de respaldo (sin internet o sin API key) ---
-        function generarAnalisisLocal(metricas) {
-            if (metricas.totalFallas === 0) {
-                return '<p>No hay datos suficientes para generar un análisis significativo.</p>';
-            }
-
-            const hallazgos = [];
-            const recomendaciones = [];
-
-            if (metricas.maquinaTop && metricas.maquinaTop.cantidad >= 2) {
-                const pct = ((metricas.maquinaTop.cantidad / metricas.totalFallas) * 100).toFixed(0);
-                hallazgos.push(`<li><strong>${metricas.maquinaTop.nombre}</strong> concentra ${metricas.maquinaTop.cantidad} de ${metricas.totalFallas} fallas (<strong>${pct}%</strong>). Requiere atención prioritaria.</li>`);
-                recomendaciones.push(`<li>Programar mantenimiento preventivo en <strong>${metricas.maquinaTop.nombre}</strong> para reducir paradas correctivas.</li>`);
-            }
-
-            if (metricas.mttr > 60) {
-                hallazgos.push(`<li>El MTTR de <strong>${metricas.mttr} min</strong> supera la hora por intervención, indicando reparaciones complejas o tiempos de espera.</li>`);
-                recomendaciones.push('<li>Revisar procedimientos de diagnóstico y disponibilidad de repuestos para reducir el MTTR.</li>');
-            } else if (metricas.mttr > 0) {
-                hallazgos.push(`<li>El MTTR de <strong>${metricas.mttr} min</strong> está dentro de un rango operativo aceptable.</li>`);
-            }
-
-            if (metricas.causaTop) {
-                hallazgos.push(`<li>La causa predominante es <strong>${metricas.causaTop.nombre}</strong> (${metricas.causaTop.cantidad} casos), indicando un patrón repetitivo.</li>`);
-                recomendaciones.push(`<li>Implementar acciones correctivas sobre <strong>${metricas.causaTop.nombre.toLowerCase()}</strong> (capacitación, ajuste de procedimientos o cambio de componentes).</li>`);
-            }
-
-            if (metricas.tipoTop) {
-                hallazgos.push(`<li>El tipo de falla más frecuente es <strong>${metricas.tipoTop.nombre}</strong> (${metricas.tipoTop.cantidad} casos).</li>`);
-            }
-
-            const resumen = `Se registraron <strong>${metricas.totalFallas}</strong> solicitudes${metricas.maquinaFiltro !== 'TODAS' ? ' para <strong>' + metricas.maquinaFiltro + '</strong>' : ''}, con un tiempo total de parada de <strong>${metricas.tiempoParadaTotal} min</strong> (${(metricas.tiempoParadaTotal / 60).toFixed(1)} hs).`;
-
-            return `
-                <div><strong>📋 Resumen ejecutivo:</strong> ${resumen}</div>
-                <div style="margin-top:8px;"><strong>🔍 Hallazgos clave:</strong>
-                    <ul style="margin:4px 0 0 18px;">${hallazgos.join('') || '<li>Sin hallazgos relevantes.</li>'}</ul>
-                </div>
-                <div style="margin-top:8px;"><strong>💡 Recomendaciones:</strong>
-                    <ul style="margin:4px 0 0 18px;">${recomendaciones.join('') || '<li>Continuar con el plan actual de mantenimiento.</li>'}</ul>
-                </div>
-            `;
-        }
-
-        // --- Genera el análisis IA en texto plano para inyectarlo al Excel ---
-        async function obtenerAnalisisParaExcel() {
-            const snapshot = await solicitudesRef.once('value');
-            const registros = snapshot.val() || {};
-            const lista = Object.values(registros);
-            if (lista.length === 0) return null;
-
-            const metricas = calcularMetricasParaIA(lista);
-
-            const filasMetricas = [
-                ['Total de solicitudes', metricas.totalFallas],
-                ['MTTR (min)', metricas.mttr],
-                ['Tiempo total de parada (min)', metricas.tiempoParadaTotal],
-                ['Tiempo total de parada (hs)', (metricas.tiempoParadaTotal / 60).toFixed(1)],
-                ['Máquina con más fallas', metricas.maquinaTop ? `${metricas.maquinaTop.nombre} (${metricas.maquinaTop.cantidad})` : 'N/A'],
-                ['Técnico con más intervenciones', metricas.tecnicoTop ? `${metricas.tecnicoTop.nombre} (${metricas.tecnicoTop.cantidad})` : 'N/A'],
-                ['Tipo de falla más frecuente', metricas.tipoTop ? `${metricas.tipoTop.nombre} (${metricas.tipoTop.cantidad})` : 'N/A'],
-                ['Causa más frecuente', metricas.causaTop ? `${metricas.causaTop.nombre} (${metricas.causaTop.cantidad})` : 'N/A']
-            ];
-
-            // Intentar análisis con Gemini en texto plano
-            let lineasAnalisis = [];
-            try {
-                const apiKey = "";
-                if (apiKey) {
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-                    const prompt = `Eres experto en mantenimiento industrial. Genera un análisis ejecutivo en ESPAÑOL de 6-8 líneas (texto plano, sin markdown, sin numeración, una idea por línea) para estos KPIs de BOLPAR S.A.:
-
-Total de solicitudes: ${metricas.totalFallas}
-MTTR: ${metricas.mttr} min
-Tiempo total de parada: ${metricas.tiempoParadaTotal} min
-Máquina con más fallas: ${metricas.maquinaTop ? metricas.maquinaTop.nombre + ' (' + metricas.maquinaTop.cantidad + ')' : 'N/A'}
-Causa más frecuente: ${metricas.causaTop ? metricas.causaTop.nombre + ' (' + metricas.causaTop.cantidad + ')' : 'N/A'}
-Tipo de falla más frecuente: ${metricas.tipoTop ? metricas.tipoTop.nombre + ' (' + metricas.tipoTop.cantidad + ')' : 'N/A'}
-
-Incluye hallazgos y recomendaciones accionables. Sin títulos. Solo las líneas.`;
-                    const r = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    if (r.ok) {
-                        const d = await r.json();
-                        const t = d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                        lineasAnalisis = t.split('\n').map(l => l.replace(/^[-*•\d.\s]+/, '').trim()).filter(Boolean);
-                    }
-                }
-            } catch (err) {
-                console.warn('Análisis IA no disponible para Excel, usando fallback:', err);
-            }
-
-            if (lineasAnalisis.length === 0) {
-                lineasAnalisis = [
-                    `Resumen: ${metricas.totalFallas} solicitudes registradas con un tiempo total de parada de ${metricas.tiempoParadaTotal} min (${(metricas.tiempoParadaTotal / 60).toFixed(1)} hs).`,
-                    `MTTR promedio: ${metricas.mttr} min por intervención.`,
-                    metricas.maquinaTop ? `Máquina más afectada: ${metricas.maquinaTop.nombre} con ${metricas.maquinaTop.cantidad} fallas.` : '',
-                    metricas.causaTop ? `Causa predominante: ${metricas.causaTop.nombre} (${metricas.causaTop.cantidad} casos).` : '',
-                    metricas.tipoTop ? `Tipo de falla más común: ${metricas.tipoTop.nombre} (${metricas.tipoTop.cantidad} casos).` : '',
-                    'Recomendación: priorizar mantenimiento preventivo en las máquinas con más fallas.',
-                    'Recomendación: revisar los procedimientos asociados a la causa predominante.'
-                ].filter(Boolean);
-            }
-
-            return { metricas: filasMetricas, lineasAnalisis };
-        }
-
-        // --- EXPORTAR EXCEL CON IA ---
+        // --- EXPORTAR ---
         async function exportarExcel() {
-            mostrarToast('📊 Generando Excel con análisis IA...', 'info');
+            mostrarToast('📊 Generando Excel...', 'info');
             try {
                 const snapshot = await solicitudesRef.orderByChild('numero_solicitud').once('value');
                 const registros = snapshot.val();
-                if (!registros) {
-                    mostrarToast('❌ No hay registros para exportar.', 'error');
-                    return;
-                }
+                if (!registros) return;
 
-                // Hoja 1: Datos completos
-                const data = Object.keys(registros).map(k => {
-                    const r = registros[k];
-                    return {
-                        'Nº Solicitud': r.numero_solicitud || '',
-                        'Fecha': r.fecha || '',
-                        'Máquina': r.maquina || '',
-                        'Técnico': r.tecnico || '',
-                        'Jefe': r.jefe || '',
-                        'Hora Solicitud': r.hora_solicitud || '',
-                        'Hora Llegada': r.hora_llegada || '',
-                        'Hora Fin': r.hora_finalizacion || '',
-                        'Duración (min)': r.duracion || '',
-                        'Estado': r.estado || 'Finalizada',
-                        'Descripción': r.descripcion || ''
-                    };
-                });
+                const data = Object.keys(registros).map(k => ({
+                    'Nº Solicitud': registros[k].numero_solicitud || '',
+                    'Fecha': registros[k].fecha || '',
+                    'Máquina': registros[k].maquina || '',
+                    'Técnico': registros[k].tecnico || '',
+                    'Jefe': registros[k].jefe || '',
+                    'Estado': registros[k].estado || 'Finalizada',
+                    'Descripción': registros[k].descripcion || ''
+                }));
 
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.json_to_sheet(data);
                 XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
-
-                // Hoja 2: Análisis IA de los datos exportados
-                try {
-                    const analisis = await obtenerAnalisisParaExcel();
-                    if (analisis) {
-                        const aoaIA = [
-                            ['ANÁLISIS INTELIGENTE DE KPIs — BOLPAR S.A.'],
-                            ['Generado', new Date().toLocaleString('es-ES')],
-                            [],
-                            ['MÉTRICA', 'VALOR'],
-                            ...analisis.metricas,
-                            [],
-                            ['ANÁLISIS Y RECOMENDACIONES'],
-                            ...analisis.lineasAnalisis.map(t => [t])
-                        ];
-                        const wsIA = XLSX.utils.aoa_to_sheet(aoaIA);
-                        wsIA['!cols'] = [{ wch: 38 }, { wch: 90 }];
-                        XLSX.utils.book_append_sheet(wb, wsIA, 'Análisis IA');
-                    }
-                } catch (errIA) {
-                    console.warn('No se pudo añadir el análisis IA al Excel:', errIA);
-                }
-
-                const fechaArchivo = new Date().toISOString().slice(0, 10);
-                XLSX.writeFile(wb, `Solicitudes_BOLPAR_${fechaArchivo}.xlsx`);
-                mostrarToast('✅ Excel exportado con hoja "Análisis IA".', 'success');
+                XLSX.writeFile(wb, 'Solicitudes_BOLPAR.xlsx');
+                mostrarToast('✅ Excel exportado.', 'success');
             } catch (err) {
                 mostrarToast('❌ Error exportando Excel: ' + err.message, 'error');
+            }
+        }
+
+        async function exportarPDF() {
+            mostrarToast('📄 Generando PDF...', 'info');
+            try {
+                const element = document.querySelector('.container');
+                const botonesFirma = document.querySelectorAll('.firma-botones');
+                botonesFirma.forEach(el => el.style.display = 'none');
+
+                const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.save('Solicitud_BOLPAR.pdf');
+                mostrarToast('✅ PDF exportado.', 'success');
+
+                botonesFirma.forEach(el => el.style.display = 'flex');
+            } catch (err) {
+                mostrarToast('❌ Error exportando PDF: ' + err.message, 'error');
             }
         }
 
@@ -3310,7 +3187,6 @@ Incluye hallazgos y recomendaciones accionables. Sin títulos. Solo las líneas.
 
             setFechaHoraActual();
             if (!mantenerNumero) cargarSugerenciaNumero();
-            limpiarTextoVoz();
             mostrarToast('🧹 Formulario reajustado.', 'info');
         }
 
