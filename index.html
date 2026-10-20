@@ -1467,7 +1467,6 @@
                         }
                     }
                     if (coincidePrefijo) {
-                        // Omitir el fragmento parcial anterior y quedarse con la versión más completa que le sigue
                         i += len;
                         saltoRealizado = true;
                         break;
@@ -1506,7 +1505,6 @@
             };
 
             rec.onresult = (event) => {
-                // Reconstruir desde cero sobre event.results evitando concatenar resultados acumulativos repetidos en móviles
                 let segmentos = [];
                 for (let i = 0; i < event.results.length; ++i) {
                     const t = event.results[i][0].transcript.trim();
@@ -1517,7 +1515,6 @@
                         const tNorm = t.toLowerCase();
                         const prevNorm = prev.toLowerCase();
 
-                        // En Android Chrome cada resultado nuevo a veces ya incluye todo el texto anterior
                         if (tNorm.startsWith(prevNorm)) {
                             segmentos[segmentos.length - 1] = t;
                             continue;
@@ -1618,7 +1615,7 @@
 
         // --- PROCESAMIENTO CON IA (API EXTERNA + FALLBACK INTELIGENTE LOCAL) ---
         async function llamarGeminiConReintentos(payload, maxRetries = 2) {
-            const apiKey = ""; // Dejar vacío si se usa el fallback local
+            const apiKey = "";
             if (!apiKey) throw new Error("Sin API key, usando fallback local.");
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
             let delay = 1000;
@@ -1786,14 +1783,17 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
 
             // 4. Horas
             const normalizarHora = (h, m) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            
+            // Búsqueda con palabras clave
             const matchFin = t.match(/(?:finalizaci[oó]n|salida|termin[oó]|fin)\s*(?:a\s*las\s*)?([01]?\d|2[0-3])[:\s]?([0-5]\d)\b/);
             if (matchFin) res.hora_finalizacion = normalizarHora(matchFin[1], matchFin[2]);
 
-            const matchSol = t.match(/(?:solicitud|inicio|empez[oó])\s*(?:a\s*las\s*)?([01]?\d|2[0-3])[:\s]?([0-5]\d)\b/);
+            const matchSol = t.match(/(?:solicitud|inicio|empez[oó]|llegada|llego|llega|entrada|entro)\s*(?:a\s*las\s*)?([01]?\d|2[0-3])[:\s]?([0-5]\d)\b/);
             if (matchSol) res.hora_solicitud = normalizarHora(matchSol[1], matchSol[2]);
 
+            // Búsqueda general si no hay palabras clave
             if (!res.hora_solicitud && !res.hora_finalizacion) {
-                const horasDosPuntos = [...textoLimpio.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)];
+                const horasDosPuntos = [...textoLimpio.matchAll(/\b([01]?\d|2[0-3])[:\s]([0-5]\d)\b/g)];
                 if (horasDosPuntos.length === 1) {
                     if (/salida|finalizaci[oó]n|fin/.test(t)) res.hora_finalizacion = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
                     else res.hora_solicitud = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
@@ -1806,13 +1806,32 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
                 }
             }
 
-            // 5. Descripción
-            const matchDesc = textoLimpio.match(/(?:descripci[oó]n(?:\s+del)?(?:\s+trabajo)?|trabajo(?:\s+realizado)?)\s+(.+?)(?=\s+(?:salida|hora|ahora|finalizaci[oó]n|termin[oó]|capacitaci[oó]n)|$)/i);
+            // 5. Descripción (Limpieza profunda)
+            const matchDesc = textoLimpio.match(/(?:descripci[oó]n(?:\s+del)?(?:\s+trabajo)?|trabajo(?:\s+realizado)?)\s+(.+?)(?=\s+(?:salida|hora|ahora|finalizaci[oó]n|termin[oó]|capacitaci[oó]n|maquina|tecnico|jefe)|$)/i);
             if (matchDesc && matchDesc[1]) {
                 const d = matchDesc[1].trim();
                 res.descripcion = d.charAt(0).toUpperCase() + d.slice(1);
             } else {
-                res.descripcion = textoLimpio;
+                // Si no hay palabra clave, limpiamos la basura (nombres, horas, etc)
+                let desc = textoLimpio;
+                if (res.maquina) desc = desc.replace(new RegExp(res.maquina, 'ig'), '');
+                if (res.tecnico) desc = desc.replace(new RegExp(res.tecnico, 'ig'), '');
+                if (res.tecnico) desc = desc.replace(/michael|pintos|nicolas|morel/ig, '');
+                if (res.jefe) desc = desc.replace(new RegExp(res.jefe, 'ig'), '');
+                
+                // Quitar horas (ej. "14:10", "14 10", "A las 14:10")
+                desc = desc.replace(/(?:\b(?:hora|ahora|a\s+las|finalizaci[oó]n|salida|solicitud|inicio|empez[oó]|entrada)\b\s*)?([01]?\d|2[0-3])[:\s]?([0-5]\d)\b/ig, '');
+                desc = desc.replace(/\b([01]\d|2[0-3])([0-5]\d)\b/g, '');
+                
+                // Quitar palabras de relleno
+                desc = desc.replace(/(maquina|tecnico|jefe|descripcion|trabajo|de|la|el|los|las|ahora|salida|llegada|finalizacion|a las|con|en|que|se|por)/ig, ' ');
+                
+                desc = desc.replace(/\s+/g, ' ').trim();
+                if (desc.length > 3) {
+                    res.descripcion = desc.charAt(0).toUpperCase() + desc.slice(1);
+                } else {
+                    res.descripcion = ''; // Vacío para que el usuario lo complete
+                }
             }
 
             if (/software/.test(t)) res.otro_tipo = 'Software';
@@ -1890,13 +1909,28 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
             document.getElementById('prevEstado').value = iaData.estado || document.getElementById('estado').value || 'Finalizada';
             document.getElementById('prevFecha').value = iaData.fecha || document.getElementById('fechaSolicitud').value;
 
-            const horaSol = iaData.hora_solicitud || document.getElementById('horaSolicitud').value;
-            document.getElementById('prevHoraSolicitud').value = horaSol;
+            // Lógica inteligente para las horas
+            let hSol = iaData.hora_solicitud;
+            let hLleg = iaData.hora_llegada;
+            let hFin = iaData.hora_finalizacion;
 
-            const horaLleg = iaData.hora_llegada || (iaData.hora_solicitud ? sumarMinutos(iaData.hora_solicitud, 2) : document.getElementById('horaLlegada').value);
-            document.getElementById('prevHoraLlegada').value = horaLleg;
+            // Si la IA detectó hora de fin, pero no de inicio, calculamos un inicio lógico
+            if (hFin && !hSol && !hLleg) {
+                hSol = sumarMinutos(hFin, -45);
+                hLleg = sumarMinutos(hFin, -15);
+            } else if (hLleg && !hSol) {
+                hSol = sumarMinutos(hLleg, -5);
+            } else if (hSol && !hLleg) {
+                hLleg = sumarMinutos(hSol, 5);
+            }
 
-            document.getElementById('prevHoraFinalizacion').value = iaData.hora_finalizacion || document.getElementById('horaFinalizacion').value;
+            if (!hSol) hSol = document.getElementById('horaSolicitud').value;
+            if (!hLleg) hLleg = document.getElementById('horaLlegada').value;
+            if (!hFin) hFin = document.getElementById('horaFinalizacion').value;
+
+            document.getElementById('prevHoraSolicitud').value = hSol;
+            document.getElementById('prevHoraLlegada').value = hLleg;
+            document.getElementById('prevHoraFinalizacion').value = hFin;
 
             document.getElementById('prevMecanico').checked = !!iaData.mecanico;
             document.getElementById('prevElectrico').checked = !!iaData.electrico;
@@ -1915,7 +1949,7 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
             else if (iaData.capacitacion === 'NO') document.getElementById('prevCapNo').checked = true;
             else document.getElementById('prevCapNinguno').checked = true;
 
-            document.getElementById('prevDescripcion').value = iaData.descripcion || comandoOriginal;
+            document.getElementById('prevDescripcion').value = iaData.descripcion || '';
 
             marcarCampoDetectado('fieldPrevMaquina', !!iaData.maquina);
             marcarCampoDetectado('fieldPrevTecnico', !!(iaData.tecnico || (iaData.maquina && datosMaquinas[iaData.maquina])));
@@ -1923,7 +1957,7 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
             marcarCampoDetectado('fieldPrevEstado', !!iaData.estado);
             marcarCampoDetectado('fieldPrevFecha', !!iaData.fecha);
             marcarCampoDetectado('fieldPrevHoraSol', !!iaData.hora_solicitud);
-            marcarCampoDetectado('fieldPrevHoraLleg', !!(iaData.hora_llegada || iaData.hora_solicitud));
+            marcarCampoDetectado('fieldPrevHoraLleg', !!iaData.hora_llegada);
             marcarCampoDetectado('fieldPrevHoraFin', !!iaData.hora_finalizacion);
 
             const algunTipo = iaData.mecanico || iaData.electrico || iaData.hidraulico || iaData.instalaciones || iaData.ajuste || iaData.otro_tipo;
@@ -2024,7 +2058,7 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
             document.getElementById('capNo').checked = document.getElementById('prevCapNo').checked;
             animarCampoActualizado('boxCapacitacion');
 
-            if (desc) {
+            if (desc !== undefined) {
                 document.getElementById('descripcion').value = desc;
                 animarCampoActualizado('descripcion');
             }
@@ -2502,8 +2536,12 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
             const partes = hora.split(':');
             let h = parseInt(partes[0], 10);
             let m = parseInt(partes[1], 10) + minutos;
+
+            while (m < 0) { m += 60; h -= 1; }
             while (m >= 60) { m -= 60; h += 1; }
+            if (h < 0) h += 24;
             if (h >= 24) h -= 24;
+
             return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
         }
 
