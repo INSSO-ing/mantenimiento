@@ -1057,7 +1057,7 @@
         </div>
     </div>
 
-    <!-- Modal genérico para Entrada / Confirmación (Reemplazo seguro de alert/prompt/confirm) -->
+    <!-- Modal genérico para Entrada / Confirmación -->
     <div class="modal-overlay" id="modalDialogoCustom">
         <div class="modal-content">
             <h3 id="dialogoTitulo" style="margin-bottom: 8px; color: #2c3e50;">Confirmación</h3>
@@ -1120,9 +1120,7 @@
                 <td class="label">MÁQUINA <span style="color:red;">*</span>:</td>
                 <td class="value">
                     <div class="select-wrapper">
-                        <select id="maquina" onchange="actualizarDatosMaquina()">
-                            <!-- Las opciones se cargarán desde Firebase dinámicamente -->
-                        </select>
+                        <select id="maquina" onchange="actualizarDatosMaquina()"></select>
                         <span class="btn-config" onclick="toggleMenu('maquina')" title="Gestionar opciones">⚙️</span>
                         <div id="menuMaquina" class="menu-contextual">
                             <div class="opcion" onclick="agregarOpcion('maquina')">➕ Añadir</div>
@@ -1145,9 +1143,7 @@
                 <td class="label">JEFE DE MÁQUINA <span style="color:red;">*</span>:</td>
                 <td class="value">
                     <div class="select-wrapper">
-                        <select id="jefeMaquina">
-                            <!-- Las opciones se cargarán desde Firebase dinámicamente -->
-                        </select>
+                        <select id="jefeMaquina"></select>
                         <span class="btn-config" onclick="toggleMenu('jefeMaquina')" title="Gestionar opciones">⚙️</span>
                         <div id="menuJefeMaquina" class="menu-contextual">
                             <div class="opcion" onclick="agregarOpcion('jefeMaquina')">➕ Añadir</div>
@@ -1377,7 +1373,7 @@
         // --- REGISTRO DINÁMICO DE SERVICE WORKER EN LÍNEA ---
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'bolpar-mantenimiento-v4';
+                const CACHE_NAME = 'bolpar-mantenimiento-v5';
                 const ASSETS = [
                     './',
                     'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
@@ -1444,8 +1440,6 @@
         let escuchandoVoz = false;
         let textoBaseAntesDeDictar = '';
 
-        // --- MODALES DE DIÁLOGO PERSONALIZADOS (Sustituyen alert/confirm/prompt) ---
-        // --- STREAMING_CHUNK:Implementing anti-duplication Web Speech API voice recognition and smart text cleaner... ---
         // --- LIMPIADOR DE REPETICIONES EN CASCADA (Anti-eco de Android / Chrome) ---
         function limpiarTextoRepetido(texto) {
             if (!texto) return '';
@@ -1622,10 +1616,11 @@
             mostrarToast('✨ Ejemplo cargado. Pulsa "Analizar y Previsualizar".', 'info');
         }
 
-        // --- PROCESAMIENTO CON IA (GEMINI API + FALLBACK INTELIGENTE LOCAL) ---
-        async function llamarGeminiConReintentos(payload, maxRetries = 3) {
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        // --- PROCESAMIENTO CON IA (API EXTERNA + FALLBACK INTELIGENTE LOCAL) ---
+        async function llamarGeminiConReintentos(payload, maxRetries = 2) {
+            const apiKey = ""; // Dejar vacío si se usa el fallback local
+            if (!apiKey) throw new Error("Sin API key, usando fallback local.");
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
             let delay = 1000;
 
             for (let intento = 0; intento < maxRetries; intento++) {
@@ -1660,7 +1655,6 @@
                 return;
             }
 
-            // Limpiar automáticamente repeticiones del micrófono antes de enviarlo a la IA
             const comando = limpiarTextoRepetido(comandoBruto);
             textarea.value = comando;
 
@@ -1678,14 +1672,13 @@
             try {
                 const systemPrompt = `Eres un asistente experto en mantenimiento industrial para la planta BOLPAR S.A.
 Analiza el texto dictado por voz por el usuario y extrae los campos para completar la Solicitud de Mantenimiento Correctivo.
-NOTA CRÍTICA SOBRE DICTADO POR VOZ: El texto puede tener palabras repetidas por eco del micrófono o errores fonéticos (ej. "ahora de finalización 1425" significa "hora de finalización 14:25", "Michael pinto" es "Michael Pintos"). Ignora las repeticiones y extrae el dato limpio.
-Reglas importantes:
-1. Opciones de máquinas conocidas: ${JSON.stringify(listaMaquinas)}. Si el usuario nombra una máquina parecida (ej. "flexo" -> "Impresora Flexotech 6C", "fondera uno" -> "Fondera 1", "linea 3" -> "Linea 3"), devuelve el nombre exacto de la lista. Si menciona una máquina que no está en la lista (ej. "Línea 4" o "Linea 4"), devuélvela limpia como "Linea 4".
-2. Opciones de técnicos conocidos: ${JSON.stringify(listaTecnicos)}. Si menciona "Michael", "Pinto" o "Pintos" usa "Michael Pintos". Si menciona "Nicolás" o "Morel" usa "Nicolás Morel".
-3. Opciones de jefes conocidos: ${JSON.stringify(listaJefes)}. Si menciona un jefe nuevo (ej. "Fabricio"), devuelve "Fabricio".
-4. Horas en formato 24h "HH:MM". Convierte números juntos como "1425" o "14 25" a "14:25", y "830" a "08:30". Si dice "hora de salida" o "hora de finalización", ponlo en "hora_finalizacion".
-5. En "descripcion", redacta únicamente el trabajo técnico limpio realizado (por ejemplo: "Ajuste de correa"), sin incluir las palabras "máquina", "técnico", "jefe" ni horas ni repeticiones.
-6. Fecha actual de referencia: ${fechaHoy}.`;
+NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
+1. Máquinas: ${JSON.stringify(listaMaquinas)}.
+2. Técnicos: ${JSON.stringify(listaTecnicos)}.
+3. Jefes: ${JSON.stringify(listaJefes)}.
+4. Horas en formato 24h "HH:MM".
+5. En "descripcion", redacta únicamente el trabajo técnico limpio.
+6. Fecha: ${fechaHoy}.`;
 
                 const payload = {
                     contents: [{ parts: [{ text: comando }] }],
@@ -1698,21 +1691,21 @@ Reglas importantes:
                                 maquina: { type: "STRING" },
                                 tecnico: { type: "STRING" },
                                 jefe: { type: "STRING" },
-                                fecha: { type: "STRING", description: "YYYY-MM-DD si se especifica" },
-                                hora_solicitud: { type: "STRING", description: "HH:MM" },
-                                hora_llegada: { type: "STRING", description: "HH:MM" },
-                                hora_finalizacion: { type: "STRING", description: "HH:MM" },
-                                estado: { type: "STRING", description: "Finalizada, Pendiente, En curso, o Cancelada" },
+                                fecha: { type: "STRING" },
+                                hora_solicitud: { type: "STRING" },
+                                hora_llegada: { type: "STRING" },
+                                hora_finalizacion: { type: "STRING" },
+                                estado: { type: "STRING" },
                                 mecanico: { type: "BOOLEAN" },
                                 electrico: { type: "BOOLEAN" },
                                 hidraulico: { type: "BOOLEAN" },
                                 instalaciones: { type: "BOOLEAN" },
                                 ajuste: { type: "BOOLEAN" },
-                                otro_tipo: { type: "STRING", description: "Software, Neumático, Estructural, Ruido anormal o vacío" },
+                                otro_tipo: { type: "STRING" },
                                 desgaste: { type: "BOOLEAN" },
                                 mal_ajuste: { type: "BOOLEAN" },
-                                otra_causa: { type: "STRING", description: "Falta de lubricación, Sobrecarga, Fallo eléctrico, Error de operador o vacío" },
-                                capacitacion: { type: "STRING", description: "SI, NO, o vacío" },
+                                otra_causa: { type: "STRING" },
+                                capacitacion: { type: "STRING" },
                                 descripcion: { type: "STRING" }
                             }
                         }
@@ -1725,7 +1718,7 @@ Reglas importantes:
                     datosExtraidos = JSON.parse(textJson);
                 }
             } catch (error) {
-                console.warn('Usando motor local de respaldo para extracción:', error);
+                console.log('Usando motor local de respaldo para extracción:', error.message);
                 datosExtraidos = analizarComandoLocalmente(comando, listaMaquinas, listaJefes);
             }
 
@@ -1738,7 +1731,7 @@ Reglas importantes:
             btn.textContent = '🧠 Analizar y Previsualizar';
         }
 
-        // Analizador semántico local de respaldo (por si no hay internet o falla la red)
+        // Analizador semántico local de respaldo
         function analizarComandoLocalmente(texto, listaMaquinas, listaJefes) {
             const textoLimpio = limpiarTextoRepetido(texto);
             const t = textoLimpio.toLowerCase();
@@ -1746,8 +1739,8 @@ Reglas importantes:
                 maquina: '', tecnico: '', jefe: '', fecha: '',
                 hora_solicitud: '', hora_llegada: '', hora_finalizacion: '',
                 estado: 'Finalizada',
-                mecanico: /mec[aá]nic|correa|rodamiento|cadena|engranaje/.test(t),
-                electrico: /el[eé]ctric|sensor|cable|motor|contacto/.test(t),
+                mecanico: /mec[aá]nic|correa|rodamiento|cadena|engranaje|eje/.test(t),
+                electrico: /el[eé]ctric|sensor|cable|motor|contacto|tablero/.test(t),
                 hidraulico: /hidr[aá]ulic|bomba|aceite|manguera/.test(t),
                 instalaciones: /instalaci[oó]n/.test(t),
                 ajuste: /ajuste/.test(t),
@@ -1759,7 +1752,7 @@ Reglas importantes:
                 descripcion: ''
             };
 
-            // 1. Buscar máquina en la lista o detectar "Línea X / Fondera X / Tubera X"
+            // 1. Buscar máquina
             for (const m of listaMaquinas) {
                 if (t.includes(m.toLowerCase())) { res.maquina = m; break; }
             }
@@ -1773,11 +1766,11 @@ Reglas importantes:
                 else if (t.includes('flexo')) res.maquina = 'Impresora Flexotech 6C';
             }
 
-            // 2. Buscar técnico
+            // 2. Técnico
             if (t.includes('michael') || t.includes('pinto')) res.tecnico = 'Michael Pintos';
             else if (t.includes('nicol') || t.includes('morel')) res.tecnico = 'Nicolás Morel';
 
-            // 3. Buscar jefe en la lista o capturar nombre después de "jefe [de máquina]"
+            // 3. Jefe
             for (const j of listaJefes) {
                 const jSinAcento = j.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 const tSinAcento = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -1791,42 +1784,29 @@ Reglas importantes:
                 }
             }
 
-            // 4. Extraer horas (soporta formato "14:25", "14 25" y números seguidos de 4 dígitos como "1425")
+            // 4. Horas
             const normalizarHora = (h, m) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-
-            // Buscar específicamente hora de finalización / salida
             const matchFin = t.match(/(?:finalizaci[oó]n|salida|termin[oó]|fin)\s*(?:a\s*las\s*)?([01]?\d|2[0-3])[:\s]?([0-5]\d)\b/);
-            if (matchFin) {
-                res.hora_finalizacion = normalizarHora(matchFin[1], matchFin[2]);
-            }
+            if (matchFin) res.hora_finalizacion = normalizarHora(matchFin[1], matchFin[2]);
 
-            // Buscar hora de solicitud / inicio
             const matchSol = t.match(/(?:solicitud|inicio|empez[oó])\s*(?:a\s*las\s*)?([01]?\d|2[0-3])[:\s]?([0-5]\d)\b/);
-            if (matchSol) {
-                res.hora_solicitud = normalizarHora(matchSol[1], matchSol[2]);
-            }
+            if (matchSol) res.hora_solicitud = normalizarHora(matchSol[1], matchSol[2]);
 
-            // Si no se detectó por palabra clave, buscar patrones generales de hora (HH:MM o 4 dígitos tipo 1425)
             if (!res.hora_solicitud && !res.hora_finalizacion) {
                 const horasDosPuntos = [...textoLimpio.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)];
                 if (horasDosPuntos.length === 1) {
-                    if (/salida|finalizaci[oó]n|fin/.test(t)) {
-                        res.hora_finalizacion = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
-                    } else {
-                        res.hora_solicitud = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
-                    }
+                    if (/salida|finalizaci[oó]n|fin/.test(t)) res.hora_finalizacion = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
+                    else res.hora_solicitud = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
                 } else if (horasDosPuntos.length >= 2) {
                     res.hora_solicitud = normalizarHora(horasDosPuntos[0][1], horasDosPuntos[0][2]);
                     res.hora_finalizacion = normalizarHora(horasDosPuntos[horasDosPuntos.length - 1][1], horasDosPuntos[horasDosPuntos.length - 1][2]);
                 } else {
                     const matchCuatroDigitos = textoLimpio.match(/\b([01]\d|2[0-3])([0-5]\d)\b/);
-                    if (matchCuatroDigitos) {
-                        res.hora_finalizacion = normalizarHora(matchCuatroDigitos[1], matchCuatroDigitos[2]);
-                    }
+                    if (matchCuatroDigitos) res.hora_finalizacion = normalizarHora(matchCuatroDigitos[1], matchCuatroDigitos[2]);
                 }
             }
 
-            // 5. Extraer solo la descripción del trabajo realizado
+            // 5. Descripción
             const matchDesc = textoLimpio.match(/(?:descripci[oó]n(?:\s+del)?(?:\s+trabajo)?|trabajo(?:\s+realizado)?)\s+(.+?)(?=\s+(?:salida|hora|ahora|finalizaci[oó]n|termin[oó]|capacitaci[oó]n)|$)/i);
             if (matchDesc && matchDesc[1]) {
                 const d = matchDesc[1].trim();
@@ -1835,7 +1815,6 @@ Reglas importantes:
                 res.descripcion = textoLimpio;
             }
 
-            // Otros tipos y causas
             if (/software/.test(t)) res.otro_tipo = 'Software';
             else if (/neum[aá]tic/.test(t)) res.otro_tipo = 'Neumático';
             else if (/estructural/.test(t)) res.otro_tipo = 'Estructural';
@@ -1846,7 +1825,6 @@ Reglas importantes:
             else if (/fallo el[eé]ctrico/.test(t)) res.otra_causa = 'Fallo eléctrico';
             else if (/error de operador/.test(t)) res.otra_causa = 'Error de operador';
 
-            // Capacitación
             if (/no se realiz[oó] capacitaci[oó]n|sin capacitaci[oó]n|capacitaci[oó]n no/.test(t)) {
                 res.capacitacion = 'NO';
             } else if (/s[ií] se realiz[oó] la capacitaci[oó]n|s[ií] se realiz[oó] capacitaci[oó]n|con capacitaci[oó]n|se capacit[oó]/.test(t)) {
@@ -1856,7 +1834,6 @@ Reglas importantes:
             return res;
         }
 
-        // --- STREAMING_CHUNK:Configuring interactive AI preview modal logic... -->
         // --- FUNCIONES DEL MODAL DE PREVISUALIZACIÓN IA ---
         function sincronizarSelectoresPrevisualizacion() {
             const selMaqOrig = document.getElementById('maquina');
@@ -1879,7 +1856,6 @@ Reglas importantes:
             sincronizarSelectoresPrevisualizacion();
             document.getElementById('prevTranscripcionTexto').textContent = comandoOriginal;
 
-            // Si la IA detectó máquina y no se especificó técnico/jefe, autocompletar según mapa de planta
             let maquinaVal = iaData.maquina || document.getElementById('maquina').value;
             let tecnicoVal = iaData.tecnico || '';
             let jefeVal = iaData.jefe || '';
@@ -1889,7 +1865,6 @@ Reglas importantes:
                 if (!jefeVal) jefeVal = datosMaquinas[maquinaVal].jefe;
             }
 
-            // Asegurar opción en el select de previsualización si es nueva
             if (maquinaVal) {
                 const selM = document.getElementById('prevMaquina');
                 if (![...selM.options].some(o => o.value === maquinaVal)) {
@@ -1923,7 +1898,6 @@ Reglas importantes:
 
             document.getElementById('prevHoraFinalizacion').value = iaData.hora_finalizacion || document.getElementById('horaFinalizacion').value;
 
-            // Checkboxes Tipo de Problema
             document.getElementById('prevMecanico').checked = !!iaData.mecanico;
             document.getElementById('prevElectrico').checked = !!iaData.electrico;
             document.getElementById('prevHidraulico').checked = !!iaData.hidraulico;
@@ -1932,25 +1906,17 @@ Reglas importantes:
             document.getElementById('prevOtroTipoCheck').checked = !!iaData.otro_tipo;
             document.getElementById('prevOtroTipoSelect').value = iaData.otro_tipo || '';
 
-            // Checkboxes Causa
             document.getElementById('prevDesgaste').checked = !!iaData.desgaste;
             document.getElementById('prevMalAjuste').checked = !!iaData.mal_ajuste;
             document.getElementById('prevOtraCausaCheck').checked = !!iaData.otra_causa;
             document.getElementById('prevOtraCausaSelect').value = iaData.otra_causa || '';
 
-            // Capacitación
-            if (iaData.capacitacion === 'SI') {
-                document.getElementById('prevCapSi').checked = true;
-            } else if (iaData.capacitacion === 'NO') {
-                document.getElementById('prevCapNo').checked = true;
-            } else {
-                document.getElementById('prevCapNinguno').checked = true;
-            }
+            if (iaData.capacitacion === 'SI') document.getElementById('prevCapSi').checked = true;
+            else if (iaData.capacitacion === 'NO') document.getElementById('prevCapNo').checked = true;
+            else document.getElementById('prevCapNinguno').checked = true;
 
-            // Descripción
             document.getElementById('prevDescripcion').value = iaData.descripcion || comandoOriginal;
 
-            // Resaltar visualmente qué campos detectó la IA
             marcarCampoDetectado('fieldPrevMaquina', !!iaData.maquina);
             marcarCampoDetectado('fieldPrevTecnico', !!(iaData.tecnico || (iaData.maquina && datosMaquinas[iaData.maquina])));
             marcarCampoDetectado('fieldPrevJefe', !!(iaData.jefe || (iaData.maquina && datosMaquinas[iaData.maquina])));
@@ -1996,7 +1962,7 @@ Reglas importantes:
             const el = document.getElementById(idElemento);
             if (!el) return;
             el.classList.remove('campo-actualizado-ia');
-            void el.offsetWidth; // Reflow
+            void el.offsetWidth;
             el.classList.add('campo-actualizado-ia');
         }
 
@@ -2031,30 +1997,14 @@ Reglas importantes:
                 document.getElementById('jefeMaquina').classList.remove('campo-requerido');
                 animarCampoActualizado('jefeMaquina');
             }
-            if (est) {
-                document.getElementById('estado').value = est;
-                animarCampoActualizado('estado');
-            }
-            if (fecha) {
-                document.getElementById('fechaSolicitud').value = fecha;
-                animarCampoActualizado('fechaSolicitud');
-            }
-            if (hSol) {
-                document.getElementById('horaSolicitud').value = hSol;
-                animarCampoActualizado('horaSolicitud');
-            }
-            if (hLleg) {
-                document.getElementById('horaLlegada').value = hLleg;
-                animarCampoActualizado('horaLlegada');
-            }
-            if (hFin) {
-                document.getElementById('horaFinalizacion').value = hFin;
-                animarCampoActualizado('horaFinalizacion');
-            }
+            if (est) { document.getElementById('estado').value = est; animarCampoActualizado('estado'); }
+            if (fecha) { document.getElementById('fechaSolicitud').value = fecha; animarCampoActualizado('fechaSolicitud'); }
+            if (hSol) { document.getElementById('horaSolicitud').value = hSol; animarCampoActualizado('horaSolicitud'); }
+            if (hLleg) { document.getElementById('horaLlegada').value = hLleg; animarCampoActualizado('horaLlegada'); }
+            if (hFin) { document.getElementById('horaFinalizacion').value = hFin; animarCampoActualizado('horaFinalizacion'); }
             calcularDuracion();
             animarCampoActualizado('duracion');
 
-            // Tipo de problema
             document.getElementById('mecanico').checked = document.getElementById('prevMecanico').checked;
             document.getElementById('electrico').checked = document.getElementById('prevElectrico').checked;
             document.getElementById('hidraulico').checked = document.getElementById('prevHidraulico').checked;
@@ -2064,21 +2014,16 @@ Reglas importantes:
             document.getElementById('otroTipoSelect').value = document.getElementById('prevOtroTipoSelect').value;
             animarCampoActualizado('boxTipoProblema');
 
-            // Causa
             document.getElementById('desgaste').checked = document.getElementById('prevDesgaste').checked;
             document.getElementById('malAjuste').checked = document.getElementById('prevMalAjuste').checked;
             document.getElementById('otraCausaCheck').checked = document.getElementById('prevOtraCausaCheck').checked;
             document.getElementById('otraCausaSelect').value = document.getElementById('prevOtraCausaSelect').value;
             animarCampoActualizado('boxCausaProblema');
 
-            // Capacitación
-            const capSi = document.getElementById('prevCapSi').checked;
-            const capNo = document.getElementById('prevCapNo').checked;
-            document.getElementById('capSi').checked = capSi;
-            document.getElementById('capNo').checked = capNo;
+            document.getElementById('capSi').checked = document.getElementById('prevCapSi').checked;
+            document.getElementById('capNo').checked = document.getElementById('prevCapNo').checked;
             animarCampoActualizado('boxCapacitacion');
 
-            // Descripción
             if (desc) {
                 document.getElementById('descripcion').value = desc;
                 animarCampoActualizado('descripcion');
@@ -2088,7 +2033,6 @@ Reglas importantes:
             mostrarToast('✅ Datos verificados y aplicados al formulario con éxito.', 'success');
         }
 
-        // --- STREAMING_CHUNK:Implementing Firebase data management and offline sync... -->
         // --- FUNCIÓN PARA PROBAR CONEXIÓN ---
         function probarConexion() {
             mostrarToast('🔌 Probando conexión a Firebase...', 'info');
@@ -2096,8 +2040,7 @@ Reglas importantes:
                 .then(snapshot => {
                     const data = snapshot.val();
                     if (data) {
-                        const count = Object.keys(data).length;
-                        mostrarToast(`✅ Conexión exitosa. ${count} registros encontrados.`, 'success');
+                        mostrarToast(`✅ Conexión exitosa. ${Object.keys(data).length} registros encontrados.`, 'success');
                     } else {
                         mostrarToast('✅ Conexión exitosa. No hay registros aún.', 'info');
                     }
@@ -2156,7 +2099,7 @@ Reglas importantes:
         // --- FUNCIONES PARA CARGAR Y GUARDAR OPCIONES EN FIREBASE ---
         const valoresDefault = {
             maquinas: ["Coteadora", "Impresora Flexotech 6C", "Fondera 1", "Fondera 2", "Linea 3", "Tubera 1", "Tubera 2", "Cortadora", "Dobladora", "Soldadora", "Troqueladora", "Laminadora"],
-            jefes: ["Ángel", "Julio", "Guillermo", "Carlos Barreto", "De los Santos", "Claudio", "Cristian", "Andy", "Alexis", "Roberto", "Mario", "Luis", "Pedro", "Hugo", "Fernando", "Ricardo"]
+            jefes: ["Ángel", "Julio", "Guillermo", "Carlos Barreto", "De los Santos", "Claudio", "Cristian", "Andy", "Alexis", "Roberto", "Mario", "Luis", "Pedro", "Hugo", "Fernando", "Ricardo", "Fabricio"]
         };
 
         async function cargarOpciones() {
@@ -2229,7 +2172,6 @@ Reglas importantes:
             });
         }
 
-        // --- STREAMING_CHUNK:Defining dynamic option selectors and signature pads... -->
         // --- FUNCIONES PARA AÑADIR Y ELIMINAR OPCIONES ---
         function toggleMenu(selectId) {
             const menuId = selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina';
@@ -2446,7 +2388,6 @@ Reglas importantes:
             });
         });
 
-        // --- STREAMING_CHUNK:Implementing form validation, time calculations, and record saving... -->
         // --- CORRELATIVO Y CONTADOR ---
         function obtenerProximoNumero(callback) {
             if (!navigator.onLine) {
@@ -2718,7 +2659,6 @@ Reglas importantes:
             }
         }
 
-        // --- STREAMING_CHUNK:Handling records list, details view, KPIs, and exports... -->
         // --- NOTIFICACIONES ---
         function mostrarModalExito(mensaje) {
             document.getElementById('modalMensaje').textContent = mensaje;
@@ -2741,6 +2681,36 @@ Reglas importantes:
             window.toastTimeout = setTimeout(() => { toast.style.display = 'none'; }, 3500);
         }
 
+        // --- DIÁLOGOS CUSTOM ---
+        let resolverDialogo = null;
+        function abrirDialogoCustom({ titulo, mensaje, conInput = false, placeholder = '' }) {
+            return new Promise((resolve) => {
+                resolverDialogo = resolve;
+                document.getElementById('dialogoTitulo').textContent = titulo;
+                document.getElementById('dialogoMensaje').textContent = mensaje;
+                const input = document.getElementById('dialogoInput');
+                if (conInput) {
+                    input.style.display = 'block';
+                    input.value = '';
+                    input.placeholder = placeholder;
+                    setTimeout(() => input.focus(), 100);
+                } else {
+                    input.style.display = 'none';
+                }
+                document.getElementById('modalDialogoCustom').style.display = 'flex';
+
+                document.getElementById('btnDialogoAceptar').onclick = () => {
+                    const val = conInput ? input.value : true;
+                    document.getElementById('modalDialogoCustom').style.display = 'none';
+                    if (resolverDialogo) resolverDialogo(val);
+                };
+                document.getElementById('btnDialogoCancelar').onclick = () => {
+                    document.getElementById('modalDialogoCustom').style.display = 'none';
+                    if (resolverDialogo) resolverDialogo(conInput ? null : false);
+                };
+            });
+        }
+
         // --- REGISTROS Y CONSULTAS ---
         async function cargarUltimosRegistros() {
             const contenedor = document.getElementById('listaRegistros');
@@ -2756,6 +2726,7 @@ Reglas importantes:
                     return;
                 }
 
+                // Mapear y ordenar de MENOR a MAYOR (Los nuevos registros van al final)
                 const items = Object.keys(registros).map(key => ({
                     key: key,
                     numero: registros[key].numero_solicitud || 0,
@@ -3197,7 +3168,7 @@ Reglas importantes:
             initSignaturePads();
             sincronizarDatosOffline();
             cargarOpciones();
-            console.log('✅ App con IA por Voz lista.');
+            console.log('✅ App con IA por Voz lista (Sin eco, registros al final).');
         };
     </script>
 </body>
