@@ -5,30 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitud de Mantenimiento Correctivo - BOLPAR S.A.</title>
 
-    <!-- Meta etiquetas PWA -->
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Generación e inyección dinámica del Manifest PWA -->
     <script>
         (function() {
             const manifestData = {
                 "short_name": "BOLPAR Mant.",
                 "name": "Solicitud de Mantenimiento Correctivo - BOLPAR S.A.",
                 "icons": [
-                    {
-                        "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png",
-                        "type": "image/png",
-                        "sizes": "192x192",
-                        "purpose": "any maskable"
-                    },
-                    {
-                        "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png",
-                        "type": "image/png",
-                        "sizes": "512x512",
-                        "purpose": "any maskable"
-                    }
+                    { "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+                    { "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
                 ],
                 "start_url": "./index.html",
                 "background_color": "#2c3e50",
@@ -46,391 +34,79 @@
         })();
     </script>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <!-- SheetJS para Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <!-- Librerías para PDF y firma digital -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-    <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <style>
-        /* --- Estilos globales --- */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #1a1a1a;
-        }
-        body {
-            background-color: #f2f2f2;
-            font-size: 9pt;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            background-color: #ffffff;
-            border: 2px solid #2c3e50;
-            padding: 6px 10px;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1a1a1a; }
+        body { background-color: #f2f2f2; font-size: 9pt; padding: 12px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 1000px; background-color: #ffffff; border: 2px solid #2c3e50; padding: 6px 10px; display: flex; flex-direction: column; flex-shrink: 0; }
         .container > * { flex-shrink: 0; }
 
-        /* --- Cabecera --- */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 4px;
-            border-bottom: 2px solid #2c3e50;
-        }
-        .header-table td {
-            vertical-align: middle;
-            padding: 2px 6px;
-        }
-        .logo-title {
-            font-size: 18pt;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-            color: #1a2a3a;
-        }
-        .logo-title span {
-            font-size: 9pt;
-            font-weight: normal;
-        }
-        .main-title {
-            font-size: 11pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            color: #2c3e50;
-        }
-        .doc-number-container {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 2px;
-        }
-        .doc-number-container label {
-            font-size: 10pt;
-            font-weight: bold;
-            color: #c0392b;
-        }
-        .doc-number-container input {
-            width: 70px;
-            padding: 0 4px;
-            font-size: 10pt;
-            font-weight: bold;
-            color: #c0392b;
-            border: 1px solid transparent;
-            border-radius: 3px;
-            background: transparent;
-            text-align: center;
-            transition: 0.2s;
-        }
-        .doc-number-container input:hover,
-        .doc-number-container input:focus {
-            border-color: #c0392b;
-            background: #fff;
-            outline: none;
-        }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; border-bottom: 2px solid #2c3e50; }
+        .header-table td { vertical-align: middle; padding: 2px 6px; }
+        .logo-title { font-size: 18pt; font-weight: 900; letter-spacing: 0.5px; color: #1a2a3a; }
+        .logo-title span { font-size: 9pt; font-weight: normal; }
+        .main-title { font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #2c3e50; }
+        .doc-number-container { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
+        .doc-number-container label { font-size: 10pt; font-weight: bold; color: #c0392b; }
+        .doc-number-container input { width: 70px; padding: 0 4px; font-size: 10pt; font-weight: bold; color: #c0392b; border: 1px solid transparent; border-radius: 3px; background: transparent; text-align: center; transition: 0.2s; }
+        .doc-number-container input:hover, .doc-number-container input:focus { border-color: #c0392b; background: #fff; outline: none; }
         .meta-cell { font-size: 7.5pt; }
         .meta-cell div { margin-bottom: 1px; }
 
-        /* --- Grid principal --- */
-        .grid-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 4px;
-        }
-        .grid-table td {
-            border: 1px solid #7f8c8d;
-            padding: 3px 6px;
-            font-size: 8.5pt;
-        }
-        .label {
-            font-weight: bold;
-            background-color: #f2f4f4;
-            width: 20%;
-            padding: 2px 6px;
-        }
-        .value {
-            width: 30%;
-            padding: 1px 4px;
-            position: relative;
-        }
-        .value select, .value input {
-            width: 100%;
-            padding: 1px 3px;
-            font-size: 8.5pt;
-            border: 1px solid #bdc3c7;
-            border-radius: 3px;
-            background-color: #fff;
-            box-sizing: border-box;
-            height: 22px;
-        }
-        .value .select-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .value .select-wrapper select {
-            flex: 1;
-        }
-        .btn-config {
-            cursor: pointer;
-            font-size: 12pt;
-            padding: 0 3px;
-            color: #5d6d7e;
-            user-select: none;
-            transition: 0.2s;
-            line-height: 1;
-        }
-        .btn-config:hover {
-            color: #2c3e50;
-            transform: scale(1.1);
-        }
-        .menu-contextual {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 24px;
-            background: white;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            z-index: 100;
-            min-width: 110px;
-            padding: 4px 0;
-        }
-        .menu-contextual.mostrar {
-            display: block;
-        }
-        .menu-contextual .opcion {
-            padding: 4px 12px;
-            font-size: 8.5pt;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .menu-contextual .opcion:hover {
-            background-color: #eef2f5;
-        }
-        .menu-contextual .opcion.danger {
-            color: #c0392b;
-        }
-        .menu-contextual .opcion.danger:hover {
-            background-color: #fadbd8;
-        }
+        .grid-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+        .grid-table td { border: 1px solid #7f8c8d; padding: 3px 6px; font-size: 8.5pt; }
+        .label { font-weight: bold; background-color: #f2f4f4; width: 20%; padding: 2px 6px; }
+        .value { width: 30%; padding: 1px 4px; position: relative; }
+        .value select, .value input { width: 100%; padding: 1px 3px; font-size: 8.5pt; border: 1px solid #bdc3c7; border-radius: 3px; background-color: #fff; box-sizing: border-box; height: 22px; }
+        .value .select-wrapper { display: flex; align-items: center; gap: 3px; }
+        .value .select-wrapper select { flex: 1; }
+        .btn-config { cursor: pointer; font-size: 12pt; padding: 0 3px; color: #5d6d7e; user-select: none; transition: 0.2s; line-height: 1; }
+        .btn-config:hover { color: #2c3e50; transform: scale(1.1); }
+        .menu-contextual { display: none; position: absolute; right: 0; top: 24px; background: white; border: 1px solid #bdc3c7; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); z-index: 100; min-width: 110px; padding: 4px 0; }
+        .menu-contextual.mostrar { display: block; }
+        .menu-contextual .opcion { padding: 4px 12px; font-size: 8.5pt; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .menu-contextual .opcion:hover { background-color: #eef2f5; }
+        .menu-contextual .opcion.danger { color: #c0392b; }
+        .menu-contextual .opcion.danger:hover { background-color: #fadbd8; }
 
-        .campo-requerido {
-            border-color: #e74c3c !important;
-            background-color: #fff5f5 !important;
-        }
-        .mensaje-error {
-            color: #e74c3c;
-            font-size: 7.5pt;
-            font-weight: bold;
-            display: none;
-            margin-top: 2px;
-        }
+        .campo-requerido { border-color: #e74c3c !important; background-color: #fff5f5 !important; }
+        .mensaje-error { color: #e74c3c; font-size: 7.5pt; font-weight: bold; display: none; margin-top: 2px; }
 
-        /* --- Secciones --- */
-        .section-box {
-            border: 1px solid #7f8c8d;
-            margin-bottom: 4px;
-            background-color: #fafafa;
-            flex-shrink: 0;
-        }
-        .section-header {
-            background-color: #34495e;
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 8pt;
-            padding: 2px 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        .checkbox-grid {
-            width: 100%;
-            border-collapse: collapse;
-            padding: 2px 4px;
-        }
-        .checkbox-grid td {
-            padding: 2px 6px;
-            font-size: 8pt;
-            vertical-align: middle;
-        }
-        .checkbox-grid input[type="checkbox"] {
-            width: 14px;
-            height: 14px;
-            margin-right: 4px;
-            vertical-align: middle;
-            accent-color: #2c3e50;
-            cursor: pointer;
-        }
-        .checkbox-grid label {
-            vertical-align: middle;
-            cursor: pointer;
-            font-weight: normal;
-            margin-right: 8px;
-        }
-        .checkbox-grid select {
-            padding: 1px 3px;
-            font-size: 8pt;
-            border: 1px solid #bdc3c7;
-            border-radius: 3px;
-            background-color: #fff;
-            margin-left: 2px;
-            height: 20px;
-        }
-        .note-box {
-            font-size: 7.5pt;
-            padding: 2px 8px;
-            background-color: #eef2f5;
-            border-top: 1px solid #d5dbdb;
-            color: #2c3e50;
-        }
+        .section-box { border: 1px solid #7f8c8d; margin-bottom: 4px; background-color: #fafafa; flex-shrink: 0; }
+        .section-header { background-color: #34495e; color: #ffffff; font-weight: bold; font-size: 8pt; padding: 2px 8px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .checkbox-grid { width: 100%; border-collapse: collapse; padding: 2px 4px; }
+        .checkbox-grid td { padding: 2px 6px; font-size: 8pt; vertical-align: middle; }
+        .checkbox-grid input[type="checkbox"] { width: 14px; height: 14px; margin-right: 4px; vertical-align: middle; accent-color: #2c3e50; cursor: pointer; }
+        .checkbox-grid label { vertical-align: middle; cursor: pointer; font-weight: normal; margin-right: 8px; }
+        .checkbox-grid select { padding: 1px 3px; font-size: 8pt; border: 1px solid #bdc3c7; border-radius: 3px; background-color: #fff; margin-left: 2px; height: 20px; }
+        .note-box { font-size: 7.5pt; padding: 2px 8px; background-color: #eef2f5; border-top: 1px solid #d5dbdb; color: #2c3e50; }
 
-        /* --- Descripción --- */
-        .description-box {
-            border: 1px solid #7f8c8d;
-            margin-bottom: 4px;
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            min-height: 40px;
-        }
-        .description-header {
-            background-color: #f2f4f4;
-            color: #2c3e50;
-            font-weight: bold;
-            font-size: 8pt;
-            padding: 2px 8px;
-            border-bottom: 1px solid #7f8c8d;
-            text-transform: uppercase;
-            flex-shrink: 0;
-        }
-        .description-box textarea {
-            width: 100%;
-            flex: 1;
-            padding: 4px 8px;
-            border: none;
-            font-size: 8.5pt;
-            resize: none;
-            font-family: inherit;
-            outline: none;
-            background: #ffffff;
-            min-height: 30px;
-        }
+        .description-box { border: 1px solid #7f8c8d; margin-bottom: 4px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 40px; }
+        .description-header { background-color: #f2f4f4; color: #2c3e50; font-weight: bold; font-size: 8pt; padding: 2px 8px; border-bottom: 1px solid #7f8c8d; text-transform: uppercase; flex-shrink: 0; }
+        .description-box textarea { width: 100%; flex: 1; padding: 4px 8px; border: none; font-size: 8.5pt; resize: none; font-family: inherit; outline: none; background: #ffffff; min-height: 30px; }
 
-        /* --- Capacitación --- */
-        .cap-row {
-            border: 1px solid #7f8c8d;
-            background-color: #fafafa;
-            padding: 2px 8px;
-            margin-bottom: 4px;
-            font-size: 8.5pt;
-            flex-shrink: 0;
-        }
-        .cap-row input[type="checkbox"] {
-            width: 14px;
-            height: 14px;
-            margin-right: 4px;
-            vertical-align: middle;
-            accent-color: #2c3e50;
-            cursor: pointer;
-        }
-        .cap-row label {
-            vertical-align: middle;
-            cursor: pointer;
-            margin-right: 15px;
-        }
+        .cap-row { border: 1px solid #7f8c8d; background-color: #fafafa; padding: 2px 8px; margin-bottom: 4px; font-size: 8.5pt; flex-shrink: 0; }
+        .cap-row input[type="checkbox"] { width: 14px; height: 14px; margin-right: 4px; vertical-align: middle; accent-color: #2c3e50; cursor: pointer; }
+        .cap-row label { vertical-align: middle; cursor: pointer; margin-right: 15px; }
 
-        /* --- Firmas --- */
-        .signatures-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 4px;
-            flex-shrink: 0;
-        }
-        .signatures-table td {
-            width: 50%;
-            text-align: center;
-            vertical-align: middle;
-            padding: 0 10px;
-        }
-        .sig-line {
-            border-top: 1px dashed #2c3e50;
-            margin-top: 4px;
-            padding-top: 2px;
-            font-size: 8pt;
-            font-weight: bold;
-            color: #34495e;
-            text-transform: uppercase;
-        }
-        .sig-line .firma-container {
-            margin-top: -6px;
-            margin-bottom: -4px;
-        }
-        .firma-canvas {
-            border: 1px dashed #7f8c8d;
-            border-radius: 4px;
-            background-color: #fafafa;
-            width: 100%;
-            height: 40px;
-            display: block;
-            touch-action: none;
-        }
-        .firma-botones {
-            margin-top: 2px;
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-        }
-        .firma-botones button {
-            font-size: 7pt;
-            padding: 1px 6px;
-        }
+        .signatures-table { width: 100%; border-collapse: collapse; margin-top: 4px; flex-shrink: 0; }
+        .signatures-table td { width: 50%; text-align: center; vertical-align: middle; padding: 0 10px; }
+        .sig-line { border-top: 1px dashed #2c3e50; margin-top: 4px; padding-top: 2px; font-size: 8pt; font-weight: bold; color: #34495e; text-transform: uppercase; }
+        .sig-line .firma-container { margin-top: -6px; margin-bottom: -4px; }
+        .firma-canvas { border: 1px dashed #7f8c8d; border-radius: 4px; background-color: #fafafa; width: 100%; height: 40px; display: block; touch-action: none; }
+        .firma-botones { margin-top: 2px; display: flex; gap: 6px; justify-content: center; }
+        .firma-botones button { font-size: 7pt; padding: 1px 6px; }
 
-        /* --- Botones y acciones --- */
-        .action-bar-wrapper {
-            width: 100%;
-            max-width: 1000px;
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-            margin-bottom: 8px;
-        }
-        .action-bar-wrapper .btn-group {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 4px 14px;
-            font-size: 8.5pt;
-            font-weight: bold;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
+        .action-bar-wrapper { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 8px; }
+        .action-bar-wrapper .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn { padding: 4px 14px; font-size: 8.5pt; font-weight: bold; border: none; border-radius: 3px; cursor: pointer; text-transform: uppercase; transition: 0.2s; white-space: nowrap; }
         .btn-success { background-color: #27ae60; color: white; }
         .btn-success:hover:not(:disabled) { background-color: #1e8449; }
         .btn-success:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -442,157 +118,113 @@
         .btn-danger:hover { background-color: #922b21; }
         .btn-primary { background-color: #2c3e50; color: white; }
         .btn-primary:hover { background-color: #1a2a3a; }
+        .btn-ia { background: linear-gradient(135deg, #8e44ad, #3498db); color: white; }
+        .btn-ia:hover { background: linear-gradient(135deg, #7d3c98, #2874a6); }
         .btn-sm { padding: 2px 8px; font-size: 7.5pt; }
 
-        /* --- Lista de registros --- */
-        #listaRegistros {
-            width: 100%;
-            max-width: 1000px;
-            margin-bottom: 8px;
-            border: 1px solid #2c3e50;
-            background-color: #fff;
-            padding: 6px 10px;
-            display: none;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        #listaRegistros .filtros-busqueda {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 6px;
-            align-items: center;
-        }
-        #listaRegistros .filtros-busqueda input,
-        #listaRegistros .filtros-busqueda select {
-            padding: 2px 6px;
-            font-size: 8.5pt;
-            border: 1px solid #bdc3c7;
-            border-radius: 3px;
-            height: 24px;
-        }
-        .registro-item-lista {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 6px;
-            border-bottom: 1px solid #e0e0e0;
-            cursor: pointer;
-            font-size: 8pt;
-        }
+        #listaRegistros { width: 100%; max-width: 1000px; margin-bottom: 8px; border: 1px solid #2c3e50; background-color: #fff; padding: 6px 10px; display: none; max-height: 500px; overflow-y: auto; }
+        #listaRegistros .filtros-busqueda { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; align-items: center; }
+        #listaRegistros .filtros-busqueda input, #listaRegistros .filtros-busqueda select { padding: 2px 6px; font-size: 8.5pt; border: 1px solid #bdc3c7; border-radius: 3px; height: 24px; }
+        .registro-item-lista { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; border-bottom: 1px solid #e0e0e0; cursor: pointer; font-size: 8pt; }
         .registro-item-lista:hover { background-color: #f0f5fa; }
-        .registro-item-lista .info {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+        .registro-item-lista .info { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
         .registro-item-lista .nro { font-weight: bold; min-width: 50px; }
-        
-        .registro-desc-preview {
-            background-color: #f1f5f9;
-            color: #334155;
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: 1px solid #cbd5e1;
-            max-width: 250px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 7.5pt;
-        }
-
-        .registro-item-lista .estado-badge {
-            display: inline-block;
-            padding: 0 6px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 7pt;
-            text-transform: uppercase;
-        }
+        .registro-desc-preview { background-color: #f1f5f9; color: #334155; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 7.5pt; }
+        .registro-item-lista .estado-badge { display: inline-block; padding: 0 6px; border-radius: 10px; font-weight: bold; font-size: 7pt; text-transform: uppercase; }
         .estado-pendiente { background: #f1c40f; color: #1a1a1a; }
         .estado-encurso { background: #3498db; color: white; }
         .estado-finalizada { background: #2ecc71; color: white; }
         .estado-cancelada { background: #e74c3c; color: white; }
 
-        /* --- Detalle --- */
-        #detalleRegistro {
-            width: 100%;
-            max-width: 1000px;
-            margin-bottom: 8px;
-            border: 2px solid #2c3e50;
-            padding: 6px 10px;
-            background-color: #fcfcfc;
-            display: none;
-            max-height: 450px;
-            overflow-y: auto;
-        }
+        #detalleRegistro { width: 100%; max-width: 1000px; margin-bottom: 8px; border: 2px solid #2c3e50; padding: 6px 10px; background-color: #fcfcfc; display: none; max-height: 450px; overflow-y: auto; }
         .cerrar-detalle { text-align: right; margin-bottom: 4px; }
         .firma-img { max-width: 150px; max-height: 50px; border: 1px dashed #7f8c8d; }
 
-        /* --- Modal y Toast --- */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 8px;
-            text-align: center;
-            max-width: 350px;
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px 30px; border-radius: 8px; text-align: center; max-width: 350px; }
         .modal-content h2 { color: #27ae60; font-size: 16pt; margin-bottom: 6px; }
         .modal-content p { font-size: 10pt; margin-bottom: 10px; }
-        .toast {
-            padding: 6px 12px;
-            margin-bottom: 4px;
-            border-radius: 4px;
-            font-weight: bold;
-            display: none;
-            font-size: 8.5pt;
-            width: 100%;
-            max-width: 1000px;
-        }
+        .toast { padding: 6px 12px; margin-bottom: 4px; border-radius: 4px; font-weight: bold; display: none; font-size: 8.5pt; width: 100%; max-width: 1000px; }
         .toast-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .toast-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .toast-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
 
-        /* --- Gráficos --- */
-        .graficos-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 10px;
+        .graficos-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 10px; }
+        .grafico-wrapper { flex: 1 1 300px; min-width: 250px; max-width: 450px; background: #fafafa; border-radius: 6px; padding: 8px; border: 1px solid #e0e0e0; }
+        .grafico-wrapper h4 { text-align: center; font-size: 8.5pt; margin-bottom: 4px; color: #2c3e50; }
+        .grafico-wrapper canvas { max-height: 200px; max-width: 100%; }
+
+        /* ==== ESTILOS NUEVOS: ASISTENTE IA ==== */
+        .modal-content-ia {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 10px;
+            max-width: 640px;
+            width: 95%;
+            max-height: 92vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        .grafico-wrapper {
-            flex: 1 1 300px;
-            min-width: 250px;
-            max-width: 450px;
-            background: #fafafa;
-            border-radius: 6px;
-            padding: 8px;
-            border: 1px solid #e0e0e0;
+        .ia-mic-wrap { text-align: center; margin: 14px 0; }
+        .btn-mic {
+            width: 78px; height: 78px; border-radius: 50%;
+            border: 3px solid #2c3e50;
+            background: #ecf0f1;
+            font-size: 32pt;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex; align-items: center; justify-content: center;
+            line-height: 1;
         }
-        .grafico-wrapper h4 {
-            text-align: center;
-            font-size: 8.5pt;
-            margin-bottom: 4px;
-            color: #2c3e50;
+        .btn-mic:hover { transform: scale(1.05); background: #d6dbdf; }
+        .btn-mic.escuchando {
+            background: #e74c3c; border-color: #c0392b; color: white;
+            animation: pulseMic 1.4s infinite;
         }
-        .grafico-wrapper canvas {
-            max-height: 200px;
-            max-width: 100%;
+        @keyframes pulseMic {
+            0% { box-shadow: 0 0 0 0 rgba(231,76,60,0.6); }
+            70% { box-shadow: 0 0 0 22px rgba(231,76,60,0); }
+            100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
+        }
+        .ia-status { margin-top: 8px; font-size: 9pt; color: #7f8c8d; min-height: 16px; }
+        .ia-transcript {
+            width: 100%; min-height: 70px; padding: 8px;
+            font-size: 9pt; border: 1px solid #bdc3c7; border-radius: 6px;
+            resize: vertical; font-family: inherit; color: #2c3e50;
+            background: #f8fafc;
+        }
+        .ia-hint { font-size: 8pt; color: #7f8c8d; margin: 6px 0; }
+        .ia-hint code { background: #eef2f5; padding: 1px 5px; border-radius: 3px; color: #c0392b; font-size: 7.5pt; }
+
+        .preview-field {
+            display: flex; align-items: center; gap: 8px;
+            padding: 7px 8px; border-bottom: 1px solid #ecf0f1;
+            background: #fdfdfd; border-radius: 4px; margin-bottom: 4px;
+        }
+        .preview-field.desactivado { opacity: 0.45; background: #f5f5f5; }
+        .preview-field input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; accent-color: #27ae60; cursor: pointer; }
+        .preview-field .pf-label { flex-shrink: 0; font-weight: bold; min-width: 120px; font-size: 8.5pt; color: #34495e; }
+        .preview-field .pf-valor { flex: 1; }
+        .preview-field .pf-valor input,
+        .preview-field .pf-valor select,
+        .preview-field .pf-valor textarea {
+            width: 100%; padding: 4px 6px; font-size: 8.5pt;
+            border: 1px solid #bdc3c7; border-radius: 4px;
+            font-family: inherit; background: #fff;
+        }
+        .preview-field .pf-valor textarea { min-height: 44px; resize: vertical; }
+        .preview-field .pf-badge {
+            font-size: 7pt; background: #eaf7ee; color: #1e8449;
+            padding: 1px 6px; border-radius: 8px; font-weight: bold;
+            flex-shrink: 0;
+        }
+        .preview-field .pf-badge.auto { background: #fff4e6; color: #b9770e; }
+
+        .ia-footer {
+            display: flex; gap: 8px; justify-content: flex-end;
+            margin-top: 14px; flex-wrap: wrap;
         }
 
-        /* --- Responsive --- */
         @media (max-width: 700px) {
             body { padding: 4px; font-size: 8pt; }
             .container { padding: 4px 6px; }
@@ -607,12 +239,14 @@
             .registro-desc-preview { max-width: 130px; }
             .menu-contextual { right: 0; top: 20px; }
             .grafico-wrapper { flex: 1 1 100%; max-width: 100%; }
+            .preview-field { flex-wrap: wrap; }
+            .preview-field .pf-label { min-width: 100%; }
         }
 
         @media print {
             .action-bar-wrapper, .btn, #listaRegistros, #seccionKPIs,
             #detalleRegistro, .modal-overlay, .toast, .firma-botones,
-            .btn-config, .menu-contextual {
+            .btn-config, .menu-contextual, .btn-ia {
                 display: none !important;
             }
             body { background: white; padding: 0; }
@@ -627,7 +261,6 @@
 
     <div class="container" id="app">
 
-        <!-- Modal de éxito -->
         <div class="modal-overlay" id="modalExito">
             <div class="modal-content">
                 <h2 id="modalTitulo">✅ ¡Guardado!</h2>
@@ -636,12 +269,60 @@
             </div>
         </div>
 
+        <!-- ===== MODAL ASISTENTE IA ===== -->
+        <div class="modal-overlay" id="modalIA">
+            <div class="modal-content-ia">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #2c3e50; padding-bottom:8px; margin-bottom:12px;">
+                    <h2 style="margin:0; color:#2c3e50; font-size:14pt;">🤖 Asistente IA de Voz</h2>
+                    <button class="btn btn-danger btn-sm" onclick="cerrarModalIA()">✕</button>
+                </div>
+
+                <!-- Paso 1: Captura -->
+                <div id="iaPasoCaptura">
+                    <p class="ia-hint">
+                        Dictá los datos de la solicitud o escribí el comando. El asistente interpreta lo que decís y te muestra una previsualización antes de aplicar los cambios.
+                    </p>
+
+                    <div class="ia-mic-wrap">
+                        <button class="btn-mic" id="btnMic" onclick="toggleReconocimientoIA()">🎤</button>
+                        <div id="iaMicStatus" class="ia-status">Presioná el micrófono para dictar</div>
+                    </div>
+
+                    <label style="font-weight:bold; font-size:8.5pt; color:#34495e;">Transcripción / Comando:</label>
+                    <textarea id="iaTextoComando" class="ia-transcript" placeholder="Ejemplo: Máquina Coteadora, técnico Michael Pintos, jefe Ángel, falla mecánica por desgaste, se cambió el rodamiento del eje principal, capacitación sí, llegada diez y media, finalización once y cuarto"></textarea>
+
+                    <div class="ia-hint">
+                        💡 <strong>Ejemplos:</strong><br>
+                        <code>Máquina Fondera 1, falla eléctrica, se reparó el tablero</code><br>
+                        <code>Técnico Nicolás Morel, jefe Julio, causa mal ajuste, capacitación sí</code><br>
+                        <code>Llegada 10:30, finalización 11:45, se cambió rodamiento</code>
+                    </div>
+
+                    <div class="ia-footer">
+                        <button class="btn btn-primary" onclick="limpiarComandoIA()">🗑 Limpiar</button>
+                        <button class="btn btn-info" onclick="analizarComandoIA()">🔍 Analizar comando</button>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Previsualización -->
+                <div id="iaPasoPreview" style="display:none;">
+                    <h4 style="margin-bottom:6px; color:#2c3e50;">📋 Verificá los datos detectados</h4>
+                    <p class="ia-hint" style="margin-bottom:10px;">
+                        Desmarcá lo que no quieras aplicar y editá cualquier valor antes de confirmar.
+                    </p>
+                    <div id="iaPreviewContenido"></div>
+                    <div class="ia-footer">
+                        <button class="btn btn-warning" onclick="volverCapturaIA()">← Volver a editar</button>
+                        <button class="btn btn-success" onclick="aplicarDatosIA()">✅ Aplicar al formulario</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Cabecera -->
         <table class="header-table">
             <tr>
-                <td class="logo-cell" style="width:25%;">
-                    <div class="logo-title">BOLPAR <span>s.a.</span></div>
-                </td>
+                <td class="logo-cell" style="width:25%;"><div class="logo-title">BOLPAR <span>s.a.</span></div></td>
                 <td class="title-cell" style="width:45%; text-align:center;">
                     <div class="main-title">Solicitud de Mantenimiento Correctivo</div>
                     <div class="doc-number-container">
@@ -663,21 +344,15 @@
         <table class="grid-table">
             <tr>
                 <td class="label">FECHA SOLICITUD:</td>
-                <td class="value">
-                    <input type="date" id="fechaSolicitud">
-                </td>
+                <td class="value"><input type="date" id="fechaSolicitud"></td>
                 <td class="label">HORA DE SOLICITUD:</td>
-                <td class="value">
-                    <input type="time" id="horaSolicitud" onchange="actualizarHoraLlegada()">
-                </td>
+                <td class="value"><input type="time" id="horaSolicitud" onchange="actualizarHoraLlegada()"></td>
             </tr>
             <tr>
                 <td class="label">MÁQUINA <span style="color:red;">*</span>:</td>
                 <td class="value">
                     <div class="select-wrapper">
-                        <select id="maquina" onchange="actualizarDatosMaquina()">
-                            <!-- Las opciones se cargarán desde Firebase dinámicamente -->
-                        </select>
+                        <select id="maquina" onchange="actualizarDatosMaquina()"></select>
                         <span class="btn-config" onclick="toggleMenu('maquina')" title="Gestionar opciones">⚙️</span>
                         <div id="menuMaquina" class="menu-contextual">
                             <div class="opcion" onclick="agregarOpcion('maquina')">➕ Añadir</div>
@@ -700,9 +375,7 @@
                 <td class="label">JEFE DE MÁQUINA <span style="color:red;">*</span>:</td>
                 <td class="value">
                     <div class="select-wrapper">
-                        <select id="jefeMaquina">
-                            <!-- Las opciones se cargarán desde Firebase dinámicamente -->
-                        </select>
+                        <select id="jefeMaquina"></select>
                         <span class="btn-config" onclick="toggleMenu('jefeMaquina')" title="Gestionar opciones">⚙️</span>
                         <div id="menuJefeMaquina" class="menu-contextual">
                             <div class="opcion" onclick="agregarOpcion('jefeMaquina')">➕ Añadir</div>
@@ -712,9 +385,7 @@
                     <div class="mensaje-error" id="errorJefe">Seleccione un jefe.</div>
                 </td>
                 <td class="label">HORA DE LLEGADA:</td>
-                <td class="value">
-                    <input type="time" id="horaLlegada">
-                </td>
+                <td class="value"><input type="time" id="horaLlegada"></td>
             </tr>
             <tr>
                 <td class="label">ESTADO:</td>
@@ -727,21 +398,16 @@
                     </select>
                 </td>
                 <td class="label">HORA DE FINALIZACIÓN:</td>
-                <td class="value">
-                    <input type="time" id="horaFinalizacion" onchange="calcularDuracion()">
-                </td>
+                <td class="value"><input type="time" id="horaFinalizacion" onchange="calcularDuracion()"></td>
             </tr>
             <tr>
                 <td class="label">DURACIÓN (min):</td>
-                <td class="value">
-                    <input type="text" id="duracion" readonly style="background:#f5f5f5;">
-                </td>
+                <td class="value"><input type="text" id="duracion" readonly style="background:#f5f5f5;"></td>
                 <td class="label"></td>
                 <td class="value"></td>
             </tr>
         </table>
 
-        <!-- Tipo de Problema -->
         <div class="section-box">
             <div class="section-header">Tipo de Problema / Falla</div>
             <table class="checkbox-grid">
@@ -767,7 +433,6 @@
             </table>
         </div>
 
-        <!-- Causa -->
         <div class="section-box">
             <div class="section-header">Causa del Problema</div>
             <table class="checkbox-grid">
@@ -789,28 +454,23 @@
             <div class="note-box"><strong>* PLAN DE ACCIÓN:</strong> REALIZAR CAPACITACIÓN AL PERSONAL SOBRE EL PROCEDIMIENTO DE AJUSTE DE LA MÁQUINA.</div>
         </div>
 
-        <!-- Descripción -->
         <div class="description-box">
             <div class="description-header">Descripción de los Trabajos Realizados</div>
             <textarea id="descripcion" placeholder="Escribe aquí la descripción detallada..."></textarea>
         </div>
 
-        <!-- Capacitación -->
         <div class="cap-row">
             <strong>INDICAR SI REALIZÓ LA CAPACITACIÓN:</strong>
             <span style="margin-left:10px;"><input type="checkbox" id="capSi"><label for="capSi">SI</label></span>
             <span style="margin-left:10px;"><input type="checkbox" id="capNo"><label for="capNo">NO</label></span>
         </div>
 
-        <!-- Firmas digitales -->
         <table class="signatures-table">
             <tr>
                 <td>
                     <div class="sig-line">
                         TÉCNICO DE MANTENIMIENTO
-                        <div class="firma-container">
-                            <canvas id="firmaTecnico" class="firma-canvas"></canvas>
-                        </div>
+                        <div class="firma-container"><canvas id="firmaTecnico" class="firma-canvas"></canvas></div>
                         <div class="firma-botones">
                             <button class="btn btn-sm btn-primary" onclick="limpiarFirma('firmaTecnico')">Limpiar</button>
                         </div>
@@ -819,9 +479,7 @@
                 <td>
                     <div class="sig-line">
                         JEFE MÁQUINA
-                        <div class="firma-container">
-                            <canvas id="firmaJefe" class="firma-canvas"></canvas>
-                        </div>
+                        <div class="firma-container"><canvas id="firmaJefe" class="firma-canvas"></canvas></div>
                         <div class="firma-botones">
                             <button class="btn btn-sm btn-primary" onclick="limpiarFirma('firmaJefe')">Limpiar</button>
                         </div>
@@ -830,13 +488,12 @@
             </tr>
         </table>
 
-        <!-- Oculto: modo edición -->
         <input type="hidden" id="editKey" value="">
     </div>
 
-    <!-- Barra de acciones -->
     <div class="action-bar-wrapper">
         <div class="btn-group">
+            <button class="btn btn-ia" onclick="abrirModalIA()">🤖 ASISTENTE IA</button>
             <button class="btn btn-success" id="btnGuardar" onclick="guardarDatos()">💾 GUARDAR</button>
             <button class="btn btn-info" onclick="cargarUltimosRegistros()">📋 VER REGISTROS</button>
             <button class="btn btn-primary" onclick="mostrarKPIs()">📈 VER KPIS</button>
@@ -849,22 +506,17 @@
         </div>
     </div>
 
-    <!-- Dashboard de Estadísticas y KPIs -->
     <div id="seccionKPIs" style="width: 100%; max-width: 1000px; margin-bottom: 8px; border: 2px solid #2c3e50; background-color: #fff; padding: 10px; display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 6px; margin-bottom: 10px;">
             <h3 style="margin: 0; color: #2c3e50;">📊 Indicadores de Mantenimiento (KPIs)</h3>
             <button class="btn btn-danger btn-sm" onclick="cerrarKPIs()">✕ Cerrar</button>
         </div>
-
         <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
             <label for="kpiFiltroMaquina"><strong>Filtrar Máquina:</strong></label>
             <select id="kpiFiltroMaquina" onchange="calcularKPIs()" style="padding: 4px; font-size: 8.5pt;">
                 <option value="TODAS">-- Todas las Máquinas --</option>
-                <!-- Se añadirán dinámicamente desde Firebase -->
             </select>
         </div>
-
-        <!-- Tarjetas numéricas -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px;">
             <div style="background: #eef2f5; border-left: 4px solid #2980b9; padding: 10px; border-radius: 4px;">
                 <span style="font-size: 8pt; color: #555; font-weight: bold;">TOTAL SOLICITUDES</span>
@@ -885,8 +537,6 @@
                 <div id="kpiTiempoParada" style="font-size: 16pt; font-weight: bold; color: #d68910;">0 min</div>
             </div>
         </div>
-
-        <!-- Contenedor de gráficos -->
         <div id="graficosContainer" class="graficos-container">
             <div class="grafico-wrapper">
                 <h4>📊 Solicitudes por Máquina</h4>
@@ -897,12 +547,9 @@
                 <canvas id="chartEstados"></canvas>
             </div>
         </div>
-        <div id="mensajeSinDatos" style="display:none; text-align:center; padding:10px; color:#888;">
-            No hay datos para mostrar.
-        </div>
+        <div id="mensajeSinDatos" style="display:none; text-align:center; padding:10px; color:#888;">No hay datos para mostrar.</div>
     </div>
 
-    <!-- Lista de registros -->
     <div id="listaRegistros">
         <h3>📋 Todos los registros guardados</h3>
         <div class="filtros-busqueda">
@@ -920,7 +567,6 @@
         <div id="contenidoRegistros"></div>
     </div>
 
-    <!-- Detalle de registro -->
     <div id="detalleRegistro">
         <div class="cerrar-detalle">
             <button class="btn btn-danger btn-sm" onclick="cerrarDetalle()">✕ CERRAR</button>
@@ -930,10 +576,10 @@
     </div>
 
     <script>
-        // --- REGISTRO DINÁMICO DE SERVICE WORKER EN LÍNEA ---
+        // ============ SERVICE WORKER ============
         if ('serviceWorker' in navigator) {
             const swCode = `
-                const CACHE_NAME = 'bolpar-mantenimiento-v3';
+                const CACHE_NAME = 'bolpar-mantenimiento-v4';
                 const ASSETS = [
                     './',
                     'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
@@ -944,42 +590,30 @@
                     'https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js',
                     'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
                 ];
-
                 self.addEventListener('install', (e) => {
                     e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
                     self.skipWaiting();
                 });
-
                 self.addEventListener('activate', (e) => {
-                    e.waitUntil(
-                        caches.keys().then((keys) => Promise.all(
-                            keys.map((k) => { if (k !== CACHE_NAME) return caches.delete(k); })
-                        ))
-                    );
+                    e.waitUntil(caches.keys().then((keys) => Promise.all(keys.map((k) => { if (k !== CACHE_NAME) return caches.delete(k); }))));
                     self.clients.claim();
                 });
-
                 self.addEventListener('fetch', (e) => {
                     if (e.request.url.includes('firebaseio.com')) return;
-                    e.respondWith(
-                        caches.match(e.request).then((res) => res || fetch(e.request))
-                    );
+                    e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
                 });
             `;
             const blobSW = new Blob([swCode], { type: 'text/javascript' });
             const swURL = URL.createObjectURL(blobSW);
-
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register(swURL)
-                    .then(reg => console.log('Service Worker activo'))
+                    .then(() => console.log('Service Worker activo'))
                     .catch(err => console.error('Error con Service Worker:', err));
             });
         }
 
-        // --- CONFIGURACIÓN DE FIREBASE ---
-        const firebaseConfig = {
-            databaseURL: "https://solicitud-mantenimiento-bolpar-default-rtdb.firebaseio.com"
-        };
+        // ============ FIREBASE ============
+        const firebaseConfig = { databaseURL: "https://solicitud-mantenimiento-bolpar-default-rtdb.firebaseio.com" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const solicitudesRef = db.ref('solicitudes_mantenimiento');
@@ -987,7 +621,7 @@
         const maquinasRef = db.ref('maquinas');
         const jefesRef = db.ref('jefes');
 
-        // --- VARIABLES GLOBALES ---
+        // ============ ESTADO GLOBAL ============
         let listaRegistrosCache = [];
         let detalleKeyActual = null;
         let signaturePadTecnico, signaturePadJefe;
@@ -995,71 +629,57 @@
         let chartMaquinas = null;
         let chartEstados = null;
 
-        // --- FUNCIÓN PARA PROBAR CONEXIÓN ---
+        // ============ ESTADO ASISTENTE IA ============
+        let recognitionIA = null;
+        let escuchandoIA = false;
+        let datosPrevisualizadosIA = null;
+        const TECNICOS_LISTA = ['Michael Pintos', 'Nicolás Morel'];
+
+        // ============ CONEXIÓN ============
         function probarConexion() {
             mostrarToast('🔌 Probando conexión a Firebase...', 'info');
-            solicitudesRef.once('value')
-                .then(snapshot => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const count = Object.keys(data).length;
-                        mostrarToast(`✅ Conexión exitosa. ${count} registros encontrados.`, 'success');
-                    } else {
-                        mostrarToast('✅ Conexión exitosa. No hay registros aún.', 'info');
-                    }
-                })
-                .catch(err => {
-                    mostrarToast(`❌ Error de conexión: ${err.message}`, 'error');
-                    console.error('Error de Firebase:', err);
-                });
+            solicitudesRef.once('value').then(snapshot => {
+                const data = snapshot.val();
+                if (data) mostrarToast(`✅ Conexión exitosa. ${Object.keys(data).length} registros encontrados.`, 'success');
+                else mostrarToast('✅ Conexión exitosa. No hay registros aún.', 'info');
+            }).catch(err => {
+                mostrarToast(`❌ Error de conexión: ${err.message}`, 'error');
+                console.error('Error de Firebase:', err);
+            });
         }
 
-        // --- MODO OFFLINE Y SINCRONIZACIÓN ---
+        // ============ OFFLINE ============
         function guardarOffline(datos) {
-            let colaOffline = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
-            colaOffline.push(datos);
-            localStorage.setItem('solicitudes_offline', JSON.stringify(colaOffline));
-            mostrarToast('📶 Guardado en modo OFFLINE. Se sincronizará al conectar.', 'info');
+            let cola = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
+            cola.push(datos);
+            localStorage.setItem('solicitudes_offline', JSON.stringify(cola));
+            mostrarToast('📶 Guardado en modo OFFLINE.', 'info');
         }
-
         async function sincronizarDatosOffline() {
-            const colaOffline = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
-            if (colaOffline.length === 0) return;
-
-            mostrarToast(`🔄 Sincronizando ${colaOffline.length} registros pendientes...`, 'info');
+            const cola = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
+            if (cola.length === 0) return;
+            mostrarToast(`🔄 Sincronizando ${cola.length} registros pendientes...`, 'info');
             const noSincronizados = [];
-
-            for (let item of colaOffline) {
-                try {
-                    await solicitudesRef.push(item);
-                } catch (err) {
-                    console.error("Error sincronización:", err);
-                    noSincronizados.push(item);
-                }
+            for (let item of cola) {
+                try { await solicitudesRef.push(item); }
+                catch (err) { noSincronizados.push(item); }
             }
-
             if (noSincronizados.length === 0) {
                 localStorage.removeItem('solicitudes_offline');
-                mostrarToast('✅ Registros sincronizados con éxito.', 'success');
-                if (document.getElementById('listaRegistros').style.display === 'block') {
-                    cargarUltimosRegistros();
-                }
+                mostrarToast('✅ Registros sincronizados.', 'success');
+                if (document.getElementById('listaRegistros').style.display === 'block') cargarUltimosRegistros();
             } else {
                 localStorage.setItem('solicitudes_offline', JSON.stringify(noSincronizados));
                 mostrarToast('⚠️ Algunos registros no se pudieron sincronizar.', 'error');
             }
         }
-
-        function guardarOpcionesOffline(tipo, lista) {
-            localStorage.setItem(`opciones_${tipo}`, JSON.stringify(lista));
-        }
-
+        function guardarOpcionesOffline(tipo, lista) { localStorage.setItem(`opciones_${tipo}`, JSON.stringify(lista)); }
         function obtenerOpcionesOffline(tipo) {
             const data = localStorage.getItem(`opciones_${tipo}`);
             return data ? JSON.parse(data) : null;
         }
 
-        // --- FUNCIONES PARA CARGAR Y GUARDAR OPCIONES EN FIREBASE ---
+        // ============ OPCIONES ============
         const valoresDefault = {
             maquinas: ["Coteadora", "Impresora Flexotech 6C", "Fondera 1", "Fondera 2", "Linea 3", "Tubera 1", "Tubera 2", "Cortadora", "Dobladora", "Soldadora", "Troqueladora", "Laminadora"],
             jefes: ["Ángel", "Julio", "Guillermo", "Carlos Barreto", "De los Santos", "Claudio", "Cristian", "Andy", "Alexis", "Roberto", "Mario", "Luis", "Pedro", "Hugo", "Fernando", "Ricardo"]
@@ -1068,16 +688,10 @@
         async function cargarOpciones() {
             if (opcionesCargadas) return;
             opcionesCargadas = true;
-
             try {
-                const [maquinasSnap, jefesSnap] = await Promise.all([
-                    maquinasRef.once('value'),
-                    jefesRef.once('value')
-                ]);
-
+                const [maquinasSnap, jefesSnap] = await Promise.all([maquinasRef.once('value'), jefesRef.once('value')]);
                 let maquinas = maquinasSnap.val();
                 let jefes = jefesSnap.val();
-
                 if (!maquinas || !Array.isArray(maquinas) || maquinas.length === 0) {
                     maquinas = valoresDefault.maquinas;
                     await maquinasRef.set(maquinas);
@@ -1086,38 +700,31 @@
                     jefes = valoresDefault.jefes;
                     await jefesRef.set(jefes);
                 }
-
                 actualizarSelectores(maquinas, jefes);
                 actualizarFiltroKPIs(maquinas);
-                mostrarToast('📋 Opciones cargadas desde Firebase.', 'info');
+                mostrarToast('📋 Opciones cargadas.', 'info');
             } catch (error) {
-                console.warn('Error al cargar desde Firebase, usando localStorage o defaults.', error);
                 let maquinas = obtenerOpcionesOffline('maquinas') || valoresDefault.maquinas;
                 let jefes = obtenerOpcionesOffline('jefes') || valoresDefault.jefes;
                 actualizarSelectores(maquinas, jefes);
                 actualizarFiltroKPIs(maquinas);
-                mostrarToast('⚠️ Usando opciones locales (offline).', 'error');
+                mostrarToast('⚠️ Usando opciones locales.', 'error');
             }
         }
 
         function actualizarSelectores(maquinas, jefes) {
             const selectMaquina = document.getElementById('maquina');
             const selectJefe = document.getElementById('jefeMaquina');
-
             selectMaquina.innerHTML = '<option value="">-- Seleccione --</option>';
             selectJefe.innerHTML = '<option value="">-- Seleccione --</option>';
-
             maquinas.forEach(m => {
                 const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = m;
+                opt.value = m; opt.textContent = m;
                 selectMaquina.appendChild(opt);
             });
-
             jefes.forEach(j => {
                 const opt = document.createElement('option');
-                opt.value = j;
-                opt.textContent = j;
+                opt.value = j; opt.textContent = j;
                 selectJefe.appendChild(opt);
             });
         }
@@ -1129,22 +736,18 @@
             kpiSelect.appendChild(todas);
             maquinas.forEach(m => {
                 const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = m;
+                opt.value = m; opt.textContent = m;
                 kpiSelect.appendChild(opt);
             });
         }
 
-        // --- FUNCIONES PARA AÑADIR Y ELIMINAR OPCIONES ---
+        // ============ MENÚS CONTEXTUALES ============
         function toggleMenu(selectId) {
             const menuId = selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina';
             const menu = document.getElementById(menuId);
-            document.querySelectorAll('.menu-contextual').forEach(m => {
-                if (m.id !== menuId) m.classList.remove('mostrar');
-            });
+            document.querySelectorAll('.menu-contextual').forEach(m => { if (m.id !== menuId) m.classList.remove('mostrar'); });
             menu.classList.toggle('mostrar');
         }
-
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.select-wrapper')) {
                 document.querySelectorAll('.menu-contextual').forEach(m => m.classList.remove('mostrar'));
@@ -1156,18 +759,12 @@
             const nuevoValor = prompt(`Ingrese el nombre de la nueva ${nombreCampo}:`);
             if (!nuevoValor || nuevoValor.trim() === '') return;
             const valorTrim = nuevoValor.trim();
-
             const select = document.getElementById(selectId);
             for (let opt of select.options) {
-                if (opt.value === valorTrim) {
-                    alert(`La ${nombreCampo} "${valorTrim}" ya existe.`);
-                    return;
-                }
+                if (opt.value === valorTrim) { alert(`La ${nombreCampo} "${valorTrim}" ya existe.`); return; }
             }
-
             const option = document.createElement('option');
-            option.value = valorTrim;
-            option.textContent = valorTrim;
+            option.value = valorTrim; option.textContent = valorTrim;
             select.appendChild(option);
             select.value = valorTrim;
 
@@ -1175,82 +772,50 @@
                 actualizarDatosMaquina();
                 const kpiSelect = document.getElementById('kpiFiltroMaquina');
                 const optKPI = document.createElement('option');
-                optKPI.value = valorTrim;
-                optKPI.textContent = valorTrim;
+                optKPI.value = valorTrim; optKPI.textContent = valorTrim;
                 kpiSelect.appendChild(optKPI);
             }
-
             const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
             ref.transaction((current) => {
                 if (!current || !Array.isArray(current)) current = [];
-                if (!current.includes(valorTrim)) {
-                    current.push(valorTrim);
-                }
+                if (!current.includes(valorTrim)) current.push(valorTrim);
                 return current;
             }).then(() => {
-                mostrarToast(`✅ ${nombreCampo.charAt(0).toUpperCase() + nombreCampo.slice(1)} "${valorTrim}" añadida.`, 'success');
+                mostrarToast(`✅ ${nombreCampo} "${valorTrim}" añadida.`, 'success');
             }).catch(err => {
                 mostrarToast('❌ Error al guardar en Firebase.', 'error');
-                console.error(err);
                 const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
-                if (!lista.includes(valorTrim)) {
-                    lista.push(valorTrim);
-                    guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista);
-                }
+                if (!lista.includes(valorTrim)) { lista.push(valorTrim); guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista); }
             });
-
             document.getElementById(selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina').classList.remove('mostrar');
         }
 
         function eliminarOpcion(selectId) {
             const select = document.getElementById(selectId);
             const valorSeleccionado = select.value;
-            if (!valorSeleccionado) {
-                alert('Selecciona una opción para eliminar.');
-                return;
-            }
+            if (!valorSeleccionado) { alert('Selecciona una opción para eliminar.'); return; }
             if (!confirm(`¿Eliminar la opción "${valorSeleccionado}"?`)) return;
-
-            const index = select.selectedIndex;
-            select.remove(index);
-            if (select.value === '') {
-                if (select.options.length > 0) select.selectedIndex = 0;
-            }
-
+            select.remove(select.selectedIndex);
+            if (select.value === '' && select.options.length > 0) select.selectedIndex = 0;
             if (selectId === 'maquina') {
                 const kpiSelect = document.getElementById('kpiFiltroMaquina');
                 for (let opt of kpiSelect.options) {
-                    if (opt.value === valorSeleccionado) {
-                        kpiSelect.remove(opt.index);
-                        break;
-                    }
-                }
-                if (document.getElementById('maquina').value === valorSeleccionado) {
-                    document.getElementById('maquina').value = '';
+                    if (opt.value === valorSeleccionado) { kpiSelect.remove(opt.index); break; }
                 }
             }
-
             const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
             ref.transaction((current) => {
                 if (!current || !Array.isArray(current)) return current;
                 const idx = current.indexOf(valorSeleccionado);
-                if (idx !== -1) {
-                    current.splice(idx, 1);
-                }
+                if (idx !== -1) current.splice(idx, 1);
                 return current;
-            }).then(() => {
-                mostrarToast(`🗑️ Opción "${valorSeleccionado}" eliminada.`, 'info');
-            }).catch(err => {
-                mostrarToast('❌ Error al eliminar de Firebase.', 'error');
-                console.error(err);
-                const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
-                const idx = lista.indexOf(valorSeleccionado);
-                if (idx !== -1) {
-                    lista.splice(idx, 1);
-                    guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista);
-                }
-            });
-
+            }).then(() => mostrarToast(`🗑️ Opción eliminada.`, 'info'))
+              .catch(err => {
+                  mostrarToast('❌ Error al eliminar.', 'error');
+                  const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
+                  const idx = lista.indexOf(valorSeleccionado);
+                  if (idx !== -1) { lista.splice(idx, 1); guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista); }
+              });
             document.getElementById(selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina').classList.remove('mostrar');
         }
 
@@ -1258,30 +823,18 @@
             if (!valor) return;
             const select = document.getElementById(selectId);
             let existe = false;
-            for (let opt of select.options) {
-                if (opt.value === valor) { existe = true; break; }
-            }
+            for (let opt of select.options) { if (opt.value === valor) { existe = true; break; } }
             if (!existe) {
                 const option = document.createElement('option');
-                option.value = valor;
-                option.textContent = valor;
+                option.value = valor; option.textContent = valor;
                 select.appendChild(option);
                 select.value = valor;
                 const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
                 ref.transaction((current) => {
                     if (!current || !Array.isArray(current)) current = [];
-                    if (!current.includes(valor)) {
-                        current.push(valor);
-                    }
+                    if (!current.includes(valor)) current.push(valor);
                     return current;
-                }).catch(err => {
-                    console.error('Error al guardar opción asegurada:', err);
-                    const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
-                    if (!lista.includes(valor)) {
-                        lista.push(valor);
-                        guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista);
-                    }
-                });
+                }).catch(err => console.error('Error asegurar opción:', err));
                 if (selectId === 'maquina') {
                     actualizarFiltroKPIs([...select.options].slice(1).map(opt => opt.value));
                 }
@@ -1290,75 +843,57 @@
             }
         }
 
-        // --- FIRMA DIGITAL ---
+        // ============ FIRMA ============
         function initSignaturePads() {
             const canvasTec = document.getElementById('firmaTecnico');
             const canvasJefe = document.getElementById('firmaJefe');
             signaturePadTecnico = new SignaturePad(canvasTec, { backgroundColor: '#fafafa' });
             signaturePadJefe = new SignaturePad(canvasJefe, { backgroundColor: '#fafafa' });
-            resizeCanvas(canvasTec);
-            resizeCanvas(canvasJefe);
+            resizeCanvas(canvasTec); resizeCanvas(canvasJefe);
         }
-
         function resizeCanvas(canvas) {
             const rect = canvas.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
-            const ctx = canvas.getContext('2d');
-            ctx.scale(dpr, dpr);
+            canvas.getContext('2d').scale(dpr, dpr);
         }
-
         function limpiarFirma(id) {
             if (id === 'firmaTecnico') signaturePadTecnico.clear();
             else if (id === 'firmaJefe') signaturePadJefe.clear();
         }
-
         function obtenerFirmaDataURL(id) {
             const pad = id === 'firmaTecnico' ? signaturePadTecnico : signaturePadJefe;
             if (pad.isEmpty()) return null;
             return pad.toDataURL('image/png');
         }
-
         function cargarFirmaDesdeDataURL(id, dataURL) {
             if (!dataURL) return;
             const pad = id === 'firmaTecnico' ? signaturePadTecnico : signaturePadJefe;
             pad.fromDataURL(dataURL);
         }
-
         window.addEventListener('resize', () => {
-            [
-                { pad: signaturePadTecnico, canvas: document.getElementById('firmaTecnico') },
-                { pad: signaturePadJefe, canvas: document.getElementById('firmaJefe') }
-            ].forEach(item => {
+            [{ pad: signaturePadTecnico, canvas: document.getElementById('firmaTecnico') },
+             { pad: signaturePadJefe, canvas: document.getElementById('firmaJefe') }].forEach(item => {
                 if (item.canvas && item.pad) {
                     if (!item.pad.isEmpty()) {
                         const data = item.pad.toDataURL();
                         resizeCanvas(item.canvas);
                         item.pad.fromDataURL(data);
-                    } else {
-                        resizeCanvas(item.canvas);
-                    }
+                    } else { resizeCanvas(item.canvas); }
                 }
             });
         });
 
-        // --- CORRELATIVO Y CONTADOR ---
+        // ============ CORRELATIVO ============
         function obtenerProximoNumero(callback) {
-            if (!navigator.onLine) {
-                callback(Math.floor(Math.random() * 900) + 100);
-                return;
-            }
-            contadorRef.transaction((current) => {
-                if (current === null) return 1;
-                return current + 1;
-            }, (error, committed, snapshot) => {
+            if (!navigator.onLine) { callback(Math.floor(Math.random() * 900) + 100); return; }
+            contadorRef.transaction((current) => (current === null ? 1 : current + 1), (error, committed, snapshot) => {
                 if (error) callback(null);
                 else if (committed) callback(snapshot.val());
                 else callback(null);
             }, false);
         }
-
         function asignarSiguienteNumero() {
             obtenerProximoNumero((num) => {
                 if (num !== null) {
@@ -1367,30 +902,23 @@
                 }
             });
         }
-
         function cargarSugerenciaNumero() {
             if (!navigator.onLine) return;
             contadorRef.once('value', (snapshot) => {
                 const val = snapshot.val();
                 const proximo = (val !== null) ? val + 1 : 1;
                 const input = document.getElementById('numeroSolicitud');
-                if (!input.value || input.value === '0' || input.value === '') {
-                    input.value = String(proximo).padStart(3, '0');
-                }
+                if (!input.value || input.value === '0' || input.value === '') input.value = String(proximo).padStart(3, '0');
             }).catch(console.error);
         }
-
         function verificarNumeroExistente(numero, callback) {
-            if (!navigator.onLine) {
-                callback(false);
-                return;
-            }
+            if (!navigator.onLine) { callback(false); return; }
             solicitudesRef.orderByChild('numero_solicitud').equalTo(numero).once('value')
                 .then((snapshot) => callback(snapshot.exists()))
                 .catch(() => callback(false));
         }
 
-        // --- MAQUINARIA Y EVENTOS ---
+        // ============ MAQUINARIA ============
         const datosMaquinas = {
             'Coteadora': { tecnico: 'Michael Pintos', jefe: 'Ángel' },
             'Impresora Flexotech 6C': { tecnico: 'Nicolás Morel', jefe: 'Julio' },
@@ -1400,29 +928,25 @@
             'Tubera 1': { tecnico: 'Nicolás Morel', jefe: 'Claudio' },
             'Tubera 2': { tecnico: 'Michael Pintos', jefe: 'Cristian' }
         };
-
         function actualizarDatosMaquina() {
             const maquina = document.getElementById('maquina').value;
             const tecnicoSelect = document.getElementById('tecnico');
             const jefeSelect = document.getElementById('jefeMaquina');
             if (maquina && datosMaquinas[maquina]) {
-                const datos = datosMaquinas[maquina];
-                tecnicoSelect.value = datos.tecnico;
-                jefeSelect.value = datos.jefe;
-                document.getElementById('errorMaquina').style.display = 'none';
-                document.getElementById('maquina').classList.remove('campo-requerido');
-            } else if (maquina) {
+                tecnicoSelect.value = datosMaquinas[maquina].tecnico;
+                jefeSelect.value = datosMaquinas[maquina].jefe;
+            }
+            if (maquina) {
                 document.getElementById('errorMaquina').style.display = 'none';
                 document.getElementById('maquina').classList.remove('campo-requerido');
             }
         }
 
-        // --- EVENTOS DE CHECKBOXES ---
+        // ============ CHECKBOXES ============
         const capSi = document.getElementById('capSi');
         const capNo = document.getElementById('capNo');
         capSi.addEventListener('change', () => { if (capSi.checked) capNo.checked = false; });
         capNo.addEventListener('change', () => { if (capNo.checked) capSi.checked = false; });
-
         document.getElementById('otroTipoSelect').addEventListener('change', function() {
             if (this.value) document.getElementById('otroTipoCheck').checked = true;
         });
@@ -1430,7 +954,7 @@
             if (this.value) document.getElementById('otraCausaCheck').checked = true;
         });
 
-        // --- TIEMPOS ---
+        // ============ TIEMPOS ============
         function calcularDuracion() {
             const llegada = document.getElementById('horaLlegada').value;
             const fin = document.getElementById('horaFinalizacion').value;
@@ -1444,7 +968,6 @@
                 document.getElementById('duracion').value = '';
             }
         }
-
         function sumarMinutos(hora, minutos) {
             if (!hora) return '';
             const partes = hora.split(':');
@@ -1454,14 +977,11 @@
             if (h >= 24) h -= 24;
             return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
         }
-
         function actualizarHoraLlegada() {
             const horaSol = document.getElementById('horaSolicitud').value;
-            const llegadaInput = document.getElementById('horaLlegada');
-            llegadaInput.value = horaSol ? sumarMinutos(horaSol, 2) : '';
+            document.getElementById('horaLlegada').value = horaSol ? sumarMinutos(horaSol, 2) : '';
             calcularDuracion();
         }
-
         function setFechaHoraActual() {
             const hoy = new Date();
             const year = hoy.getFullYear();
@@ -1479,7 +999,6 @@
             const jefe = document.getElementById('jefeMaquina').value;
             const numInput = document.getElementById('numeroSolicitud');
             const numero = parseInt(numInput.value, 10);
-
             if (!maquina) {
                 document.getElementById('errorMaquina').style.display = 'block';
                 document.getElementById('maquina').classList.add('campo-requerido');
@@ -1512,14 +1031,12 @@
             return valido;
         }
 
-        // --- GUARDADO DE DATOS ---
+        // ============ GUARDAR ============
         async function guardarDatos() {
             if (!validarFormulario()) return;
-
             const btn = document.getElementById('btnGuardar');
             btn.disabled = true;
             btn.textContent = '⏳ GUARDANDO...';
-
             const numInput = document.getElementById('numeroSolicitud');
             let numero = parseInt(numInput.value, 10);
             const editKey = document.getElementById('editKey').value;
@@ -1549,7 +1066,7 @@
                 hora_llegada: document.getElementById('horaLlegada').value,
                 hora_finalizacion: document.getElementById('horaFinalizacion').value,
                 duracion: document.getElementById('duracion').value || '',
-                estado: "Finalizada",
+                estado: document.getElementById('estado').value,
                 descripcion: document.getElementById('descripcion').value,
                 tipo_problema: {
                     mecanico: document.getElementById('mecanico').checked,
@@ -1566,10 +1083,7 @@
                     otros: document.getElementById('otraCausaCheck').checked,
                     otro_especificar: document.getElementById('otraCausaSelect').value
                 },
-                capacitacion: {
-                    si: document.getElementById('capSi').checked,
-                    no: document.getElementById('capNo').checked
-                },
+                capacitacion: { si: document.getElementById('capSi').checked, no: document.getElementById('capNo').checked },
                 firma_tecnico: obtenerFirmaDataURL('firmaTecnico') || '',
                 firma_jefe: obtenerFirmaDataURL('firmaJefe') || '',
                 timestamp: Date.now()
@@ -1593,11 +1107,8 @@
                     mostrarModalExito(`Solicitud Nº ${String(numero).padStart(3, '0')} guardada.`);
                     contadorRef.transaction(current => (current === null || numero > current) ? numero : current);
                 }
-
                 limpiarFormulario(true);
-                if (document.getElementById('listaRegistros').style.display === 'block') {
-                    cargarUltimosRegistros();
-                }
+                if (document.getElementById('listaRegistros').style.display === 'block') cargarUltimosRegistros();
                 cerrarDetalle();
             } catch (error) {
                 mostrarToast('❌ Error: ' + error.message, 'error');
@@ -1607,16 +1118,12 @@
             }
         }
 
-        // --- NOTIFICACIONES ---
+        // ============ NOTIFICACIONES ============
         function mostrarModalExito(mensaje) {
             document.getElementById('modalMensaje').textContent = mensaje;
             document.getElementById('modalExito').style.display = 'flex';
         }
-
-        function cerrarModal() {
-            document.getElementById('modalExito').style.display = 'none';
-        }
-
+        function cerrarModal() { document.getElementById('modalExito').style.display = 'none'; }
         function mostrarToast(mensaje, tipo = 'info') {
             const toast = document.getElementById('toast');
             toast.textContent = mensaje;
@@ -1629,21 +1136,16 @@
             window.toastTimeout = setTimeout(() => { toast.style.display = 'none'; }, 3500);
         }
 
-        // --- REGISTROS Y CONSULTAS ---
+        // ============ REGISTROS ============
         async function cargarUltimosRegistros() {
             const contenedor = document.getElementById('listaRegistros');
             const contenido = document.getElementById('contenidoRegistros');
             contenedor.style.display = 'block';
             contenido.innerHTML = '<p>Cargando registros...</p>';
-
             try {
                 const snapshot = await solicitudesRef.orderByChild('numero_solicitud').once('value');
                 const registros = snapshot.val();
-                if (!registros) {
-                    contenido.innerHTML = '<p>📭 No hay registros.</p>';
-                    return;
-                }
-
+                if (!registros) { contenido.innerHTML = '<p>📭 No hay registros.</p>'; return; }
                 const items = Object.keys(registros).map(key => ({
                     key: key,
                     numero: registros[key].numero_solicitud || 0,
@@ -1655,15 +1157,12 @@
                     estado: registros[key].estado || 'Finalizada',
                     timestamp: registros[key].timestamp || 0
                 })).sort((a, b) => a.numero - b.numero);
-
                 listaRegistrosCache = items;
                 renderizarLista(items);
             } catch (error) {
-                console.error("Error cargando registros:", error);
                 contenido.innerHTML = `<p>❌ Error al cargar registros: ${error.message}</p>`;
             }
         }
-
         function renderizarLista(items) {
             const contenido = document.getElementById('contenidoRegistros');
             let html = '';
@@ -1672,7 +1171,6 @@
                 const ts = item.timestamp ? new Date(item.timestamp).toLocaleString() : '';
                 const estadoClase = `estado-${item.estado.toLowerCase().replace(' ', '')}`;
                 const descTexto = item.descripcion ? item.descripcion : 'Sin descripción';
-
                 html += `
                     <div class="registro-item-lista" onclick="verDetalle('${item.key}')">
                         <div class="info">
@@ -1692,59 +1190,45 @@
             }
             contenido.innerHTML = html;
         }
-
         function aplicarFiltros() {
             const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase();
             const estado = document.getElementById('filtroEstado').value;
             const maquinaFiltro = document.getElementById('filtroMaquina').value.toLowerCase();
-
             const filtrados = listaRegistrosCache.filter(item => {
                 const numStr = String(item.numero).padStart(3, '0');
-                const matchBusqueda = numStr.includes(busqueda) || 
-                                     item.maquina.toLowerCase().includes(busqueda) || 
-                                     item.tecnico.toLowerCase().includes(busqueda) ||
-                                     item.descripcion.toLowerCase().includes(busqueda);
+                const matchBusqueda = numStr.includes(busqueda) || item.maquina.toLowerCase().includes(busqueda) || item.tecnico.toLowerCase().includes(busqueda) || item.descripcion.toLowerCase().includes(busqueda);
                 const matchEstado = estado === '' || item.estado === estado;
                 const matchMaquina = maquinaFiltro === '' || item.maquina.toLowerCase().includes(maquinaFiltro);
                 return matchBusqueda && matchEstado && matchMaquina;
             });
             renderizarLista(filtrados);
         }
-
         function cerrarLista() { document.getElementById('listaRegistros').style.display = 'none'; }
-
         async function verDetalle(key) {
             const detalleDiv = document.getElementById('detalleRegistro');
             const contenido = document.getElementById('detalleContenido');
             detalleDiv.style.display = 'block';
             contenido.innerHTML = '<p>Cargando detalle...</p>';
             detalleKeyActual = key;
-
             try {
                 const snapshot = await solicitudesRef.child(key).once('value');
                 const r = snapshot.val();
                 if (!r) return;
                 contenido.innerHTML = generarHTMLRegistro(r);
                 detalleDiv.scrollIntoView({ behavior: 'smooth' });
-            } catch (error) {
-                contenido.innerHTML = '<p>❌ Error al cargar detalle.</p>';
-            }
+            } catch (error) { contenido.innerHTML = '<p>❌ Error al cargar detalle.</p>'; }
         }
-
         function cerrarDetalle() {
             document.getElementById('detalleRegistro').style.display = 'none';
             detalleKeyActual = null;
         }
-
         function generarHTMLRegistro(data) {
             const num = String(data.numero_solicitud || '???').padStart(3, '0');
             const estadoClase = `estado-${(data.estado || 'Finalizada').toLowerCase().replace(' ', '')}`;
-
             return `
                 <div class="registro-card">
                     <div style="font-size:10pt; font-weight:bold; background:#eaeef2; padding:3px 8px; border-left:4px solid #2c3e50; margin-bottom:4px;">
-                        📄 Solicitud Nº ${num} 
-                        <span class="estado-badge ${estadoClase}">${data.estado || 'Finalizada'}</span>
+                        📄 Solicitud Nº ${num} <span class="estado-badge ${estadoClase}">${data.estado || 'Finalizada'}</span>
                     </div>
                     <table class="grid-table">
                         <tr><td class="label">FECHA:</td><td class="value"><input type="text" value="${data.fecha || ''}" readonly></td>
@@ -1762,16 +1246,13 @@
                 </div>
             `;
         }
-
         function editarDesdeDetalle() {
             if (!detalleKeyActual) return;
             solicitudesRef.child(detalleKeyActual).once('value').then(snapshot => {
                 const data = snapshot.val();
                 if (!data) return;
-
                 asegurarOpcion('maquina', data.maquina);
                 asegurarOpcion('jefeMaquina', data.jefe);
-
                 document.getElementById('numeroSolicitud').value = String(data.numero_solicitud || '').padStart(3, '0');
                 document.getElementById('fechaSolicitud').value = data.fecha ? data.fecha.split('/').reverse().join('-') : '';
                 document.getElementById('horaSolicitud').value = data.hora_solicitud || '';
@@ -1784,7 +1265,6 @@
                 document.getElementById('duracion').value = data.duracion || '';
                 document.getElementById('estado').value = data.estado || 'Finalizada';
                 document.getElementById('descripcion').value = data.descripcion || '';
-
                 const tp = data.tipo_problema || {};
                 document.getElementById('mecanico').checked = tp.mecanico || false;
                 document.getElementById('electrico').checked = tp.electrico || false;
@@ -1793,56 +1273,40 @@
                 document.getElementById('ajuste').checked = tp.ajuste || false;
                 document.getElementById('otroTipoCheck').checked = tp.otros || false;
                 document.getElementById('otroTipoSelect').value = tp.otro_especificar || '';
-
                 const causa = data.causa || {};
                 document.getElementById('desgaste').checked = causa.desgaste || false;
                 document.getElementById('malAjuste').checked = causa.mal_ajuste || false;
                 document.getElementById('otraCausaCheck').checked = causa.otros || false;
                 document.getElementById('otraCausaSelect').value = causa.otro_especificar || '';
-
                 const cap = data.capacitacion || {};
                 document.getElementById('capSi').checked = cap.si || false;
                 document.getElementById('capNo').checked = cap.no || false;
-
-                if (data.firma_tecnico) cargarFirmaDesdeDataURL('firmaTecnico', data.firma_tecnico);
-                else signaturePadTecnico.clear();
-                if (data.firma_jefe) cargarFirmaDesdeDataURL('firmaJefe', data.firma_jefe);
-                else signaturePadJefe.clear();
-
+                if (data.firma_tecnico) cargarFirmaDesdeDataURL('firmaTecnico', data.firma_tecnico); else signaturePadTecnico.clear();
+                if (data.firma_jefe) cargarFirmaDesdeDataURL('firmaJefe', data.firma_jefe); else signaturePadJefe.clear();
                 document.getElementById('editKey').value = detalleKeyActual;
                 document.getElementById('btnGuardar').textContent = '💾 ACTUALIZAR';
-                mostrarToast('✏️ Registro cargado en el formulario para editar.', 'info');
+                mostrarToast('✏️ Registro cargado para editar.', 'info');
                 cerrarDetalle();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
-
         function eliminarRegistro(key) {
             if (!confirm('¿Desea eliminar la solicitud?')) return;
-            solicitudesRef.child(key).remove()
-                .then(() => {
-                    mostrarToast('✅ Registro eliminado.', 'success');
-                    cargarUltimosRegistros();
-                    cerrarDetalle();
-                });
+            solicitudesRef.child(key).remove().then(() => {
+                mostrarToast('✅ Registro eliminado.', 'success');
+                cargarUltimosRegistros();
+                cerrarDetalle();
+            });
         }
 
-        // --- GRÁFICOS ---
+        // ============ GRÁFICOS ============
         function destruirGraficos() {
-            if (chartMaquinas) {
-                chartMaquinas.destroy();
-                chartMaquinas = null;
-            }
-            if (chartEstados) {
-                chartEstados.destroy();
-                chartEstados = null;
-            }
+            if (chartMaquinas) { chartMaquinas.destroy(); chartMaquinas = null; }
+            if (chartEstados) { chartEstados.destroy(); chartEstados = null; }
         }
-
         function crearGraficos(datos) {
             const container = document.getElementById('graficosContainer');
             const mensaje = document.getElementById('mensajeSinDatos');
-
             if (!datos || datos.length === 0) {
                 container.style.display = 'none';
                 mensaje.style.display = 'block';
@@ -1850,101 +1314,40 @@
             }
             container.style.display = 'flex';
             mensaje.style.display = 'none';
-
-            // Contar por máquina
             const conteoMaquinas = {};
-            datos.forEach(r => {
-                const maq = r.maquina || 'Sin máquina';
-                conteoMaquinas[maq] = (conteoMaquinas[maq] || 0) + 1;
-            });
-            const labelsMaq = Object.keys(conteoMaquinas);
-            const dataMaq = Object.values(conteoMaquinas);
+            datos.forEach(r => { const maq = r.maquina || 'Sin máquina'; conteoMaquinas[maq] = (conteoMaquinas[maq] || 0) + 1; });
             const coloresMaq = ['#3498db','#2ecc71','#f39c12','#e74c3c','#9b59b6','#1abc9c','#e67e22','#34495e'];
-
-            // Contar por estado
             const conteoEstados = {};
-            datos.forEach(r => {
-                const est = r.estado || 'Finalizada';
-                conteoEstados[est] = (conteoEstados[est] || 0) + 1;
-            });
+            datos.forEach(r => { const est = r.estado || 'Finalizada'; conteoEstados[est] = (conteoEstados[est] || 0) + 1; });
+            const coloresEst = { 'Finalizada': '#2ecc71', 'Pendiente': '#f1c40f', 'En curso': '#3498db', 'Cancelada': '#e74c3c' };
             const labelsEst = Object.keys(conteoEstados);
-            const dataEst = Object.values(conteoEstados);
-            const coloresEst = {
-                'Finalizada': '#2ecc71',
-                'Pendiente': '#f1c40f',
-                'En curso': '#3498db',
-                'Cancelada': '#e74c3c'
-            };
             const bgEst = labelsEst.map(l => coloresEst[l] || '#95a5a6');
-
-            // Gráfico de barras (máquinas)
-            const ctxMaq = document.getElementById('chartMaquinas').getContext('2d');
-            chartMaquinas = new Chart(ctxMaq, {
+            chartMaquinas = new Chart(document.getElementById('chartMaquinas').getContext('2d'), {
                 type: 'bar',
-                data: {
-                    labels: labelsMaq,
-                    datasets: [{
-                        label: 'Cantidad de solicitudes',
-                        data: dataMaq,
-                        backgroundColor: coloresMaq.slice(0, labelsMaq.length),
-                        borderColor: '#2c3e50',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw} solicitud(es)` } }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                    }
-                }
+                data: { labels: Object.keys(conteoMaquinas), datasets: [{ label: 'Solicitudes', data: Object.values(conteoMaquinas), backgroundColor: coloresMaq, borderColor: '#2c3e50', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
-
-            // Gráfico de dona (estados)
-            const ctxEst = document.getElementById('chartEstados').getContext('2d');
-            chartEstados = new Chart(ctxEst, {
+            chartEstados = new Chart(document.getElementById('chartEstados').getContext('2d'), {
                 type: 'doughnut',
-                data: {
-                    labels: labelsEst,
-                    datasets: [{
-                        data: dataEst,
-                        backgroundColor: bgEst,
-                        borderColor: '#ffffff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'bottom' },
-                        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} (${((ctx.raw/datos.length)*100).toFixed(1)}%)` } }
-                    }
-                }
+                data: { labels: labelsEst, datasets: [{ data: Object.values(conteoEstados), backgroundColor: bgEst, borderColor: '#ffffff', borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
             });
         }
 
-        // --- CÁLCULO DE KPIS ---
+        // ============ KPIs ============
         async function mostrarKPIs() {
             document.getElementById('seccionKPIs').style.display = 'block';
             await calcularKPIs();
             document.getElementById('seccionKPIs').scrollIntoView({ behavior: 'smooth' });
         }
-
         function cerrarKPIs() {
             document.getElementById('seccionKPIs').style.display = 'none';
             destruirGraficos();
         }
-
         async function calcularKPIs() {
             try {
                 const snapshot = await solicitudesRef.once('value');
                 const registros = snapshot.val();
-                
                 if (!registros) {
                     actualizarTarjetasKPI(0, 0, 0, 0);
                     destruirGraficos();
@@ -1952,50 +1355,29 @@
                     document.getElementById('graficosContainer').style.display = 'none';
                     return;
                 }
-
                 const maquinaSeleccionada = document.getElementById('kpiFiltroMaquina').value;
                 const lista = Object.values(registros);
-
-                const filtrados = lista.filter(r => {
-                    if (maquinaSeleccionada !== 'TODAS' && r.maquina !== maquinaSeleccionada) {
-                        return false;
-                    }
-                    return true;
-                });
-
+                const filtrados = lista.filter(r => maquinaSeleccionada === 'TODAS' || r.maquina === maquinaSeleccionada);
                 const finalizadas = filtrados.filter(r => (r.estado === 'Finalizada' || !r.estado) && r.duracion && !isNaN(parseInt(r.duracion)));
-
                 const totalFallas = filtrados.length;
                 const totalFinalizadas = finalizadas.length;
-
                 const tiempoParadaTotal = finalizadas.reduce((acc, r) => acc + parseInt(r.duracion, 10), 0);
                 const mttr = totalFinalizadas > 0 ? (tiempoParadaTotal / totalFinalizadas).toFixed(1) : 0;
-
                 let mtbfHoras = 0;
                 if (totalFallas > 1) {
                     const timestamps = filtrados.map(r => r.timestamp).filter(ts => ts).sort((a, b) => a - b);
                     if (timestamps.length >= 2) {
-                        const primerRegistro = timestamps[0];
-                        const ultimoRegistro = timestamps[timestamps.length - 1];
-                        const horasTranscurridas = (ultimoRegistro - primerRegistro) / (1000 * 60 * 60);
+                        const horasTranscurridas = (timestamps[timestamps.length - 1] - timestamps[0]) / (1000 * 60 * 60);
                         const horasParada = tiempoParadaTotal / 60;
                         const horasOperativas = Math.max(0, horasTranscurridas - horasParada);
                         mtbfHoras = (horasOperativas / totalFallas).toFixed(1);
                     }
                 }
-
                 actualizarTarjetasKPI(totalFallas, mttr, mtbfHoras, tiempoParadaTotal);
-
-                // Crear gráficos con los datos filtrados
                 destruirGraficos();
                 crearGraficos(filtrados);
-
-            } catch (error) {
-                console.error("Error al calcular KPIs:", error);
-                mostrarToast("❌ Error al calcular KPIs: " + error.message, "error");
-            }
+            } catch (error) { mostrarToast("❌ Error al calcular KPIs: " + error.message, "error"); }
         }
-
         function actualizarTarjetasKPI(total, mttr, mtbf, parada) {
             document.getElementById('kpiTotalFallas').textContent = total;
             document.getElementById('kpiMTTR').textContent = `${mttr} min`;
@@ -2003,14 +1385,13 @@
             document.getElementById('kpiTiempoParada').textContent = `${parada} min (${(parada/60).toFixed(1)} hs)`;
         }
 
-        // --- EXPORTAR ---
+        // ============ EXPORTAR ============
         async function exportarExcel() {
             mostrarToast('📊 Generando Excel...', 'info');
             try {
                 const snapshot = await solicitudesRef.orderByChild('numero_solicitud').once('value');
                 const registros = snapshot.val();
                 if (!registros) return;
-
                 const data = Object.keys(registros).map(k => ({
                     'Nº Solicitud': registros[k].numero_solicitud || '',
                     'Fecha': registros[k].fecha || '',
@@ -2020,37 +1401,28 @@
                     'Estado': registros[k].estado || 'Finalizada',
                     'Descripción': registros[k].descripcion || ''
                 }));
-
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.json_to_sheet(data);
                 XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
                 XLSX.writeFile(wb, 'Solicitudes_BOLPAR.xlsx');
                 mostrarToast('✅ Excel exportado.', 'success');
-            } catch (err) {
-                mostrarToast('❌ Error exportando Excel: ' + err.message, 'error');
-            }
+            } catch (err) { mostrarToast('❌ Error exportando Excel: ' + err.message, 'error'); }
         }
-
         async function exportarPDF() {
             mostrarToast('📄 Generando PDF...', 'info');
             try {
                 const element = document.querySelector('.container');
                 const botonesFirma = document.querySelectorAll('.firma-botones');
                 botonesFirma.forEach(el => el.style.display = 'none');
-
                 const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
                 const imgData = canvas.toDataURL('image/png');
                 const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-                const imgWidth = 210;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                const imgHeight = (canvas.height * 210) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, 210, imgHeight);
                 pdf.save('Solicitud_BOLPAR.pdf');
                 mostrarToast('✅ PDF exportado.', 'success');
-
                 botonesFirma.forEach(el => el.style.display = 'flex');
-            } catch (err) {
-                mostrarToast('❌ Error exportando PDF: ' + err.message, 'error');
-            }
+            } catch (err) { mostrarToast('❌ Error exportando PDF: ' + err.message, 'error'); }
         }
 
         function limpiarFormulario(mantenerNumero = false) {
@@ -2066,28 +1438,229 @@
             document.getElementById('otraCausaSelect').value = '';
             signaturePadTecnico.clear();
             signaturePadJefe.clear();
-
             document.querySelectorAll('.mensaje-error').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.campo-requerido').forEach(el => el.classList.remove('campo-requerido'));
-
             document.getElementById('editKey').value = '';
             document.getElementById('btnGuardar').textContent = '💾 GUARDAR';
-
             setFechaHoraActual();
             if (!mantenerNumero) cargarSugerenciaNumero();
             mostrarToast('🧹 Formulario reajustado.', 'info');
         }
 
-        // --- INICIALIZACIÓN ---
-        window.onload = function() {
-            setFechaHoraActual();
-            cargarSugerenciaNumero();
-            initSignaturePads();
-            sincronizarDatosOffline();
-            cargarOpciones();
-            // Prueba automática de conexión al cargar (solo en consola)
-            console.log('✅ App lista. Para probar conexión, usa el botón "PROBAR CONEXIÓN".');
-        };
-    </script>
-</body>
-</html>
+        // ================================================================
+        // ============ ASISTENTE IA POR VOZ =============================
+        // ================================================================
+
+        function obtenerMaquinasActuales() {
+            const select = document.getElementById('maquina');
+            return [...select.options].slice(1).map(o => o.value).filter(v => v);
+        }
+        function obtenerJefesActuales() {
+            const select = document.getElementById('jefeMaquina');
+            return [...select.options].slice(1).map(o => o.value).filter(v => v);
+        }
+
+        function normalizarTextoIA(str) {
+            return (str || '').toString().toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Busca un ítem de la lista dentro del texto (con límites de palabra)
+        function buscarEnListaIA(texto, lista) {
+            const textoNorm = ' ' + normalizarTextoIA(texto) + ' ';
+            const ordenada = [...lista].sort((a, b) => b.length - a.length);
+            for (const item of ordenada) {
+                const itemNorm = normalizarTextoIA(item);
+                // Regex con límites no-alfanuméricos
+                const regex = new RegExp('(^|[^a-z0-9])' + itemNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-z0-9])', 'i');
+                if (regex.test(' ' + textoNorm + ' ')) {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        // Extrae hora cercana a palabras clave
+        function extraerHoraIA(texto, palabrasClave) {
+            const limpio = texto.replace(/(\d{1,2})[.,](\d{2})/g, '$1:$2');
+            const patron = new RegExp('(?:' + palabrasClave.join('|') + ')[^0-9]{0,30}(\\d{1,2}):(\\d{2})', 'i');
+            const match = limpio.match(patron);
+            if (match) {
+                const h = parseInt(match[1], 10);
+                const m = parseInt(match[2], 10);
+                if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                }
+            }
+            // Fallback: buscar "a las HH:MM"
+            const patron2 = /(?:a\s+las?|tipo)\s*(\d{1,2}):(\d{2})/i;
+            const m2 = limpio.match(patron2);
+            if (m2) {
+                const h = parseInt(m2[1], 10);
+                const m = parseInt(m2[2], 10);
+                if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                }
+            }
+            return null;
+        }
+
+        // Parser principal
+        function parsearComandoIA(textoOriginal) {
+            const datos = {};
+            const texto = textoOriginal || '';
+            const textoNorm = normalizarTextoIA(texto);
+
+            // 1) Máquina
+            const maquinas = obtenerMaquinasActuales();
+            const maquina = buscarEnListaIA(texto, maquinas);
+            if (maquina) datos.maquina = maquina;
+
+            // 2) Técnico
+            const tecnico = buscarEnListaIA(texto, TECNICOS_LISTA);
+            if (tecnico) datos.tecnico = tecnico;
+
+            // 3) Jefe
+            const jefes = obtenerJefesActuales();
+            const jefe = buscarEnListaIA(texto, jefes);
+            if (jefe) datos.jefe = jefe;
+
+            // 4) Horas
+            const horaLlegada = extraerHoraIA(texto, ['llegada', 'llego', 'llega', 'arribo', 'arriba', 'entro', 'entra', 'ingreso', 'ingresa']);
+            if (horaLlegada) datos.hora_llegada = horaLlegada;
+
+            const horaFin = extraerHoraIA(texto, ['finalizacion', 'finaliza', 'finalizo', 'termino', 'termina', 'terminado', 'salida', 'salgo', 'salio', 'fin']);
+            if (horaFin) datos.hora_finalizacion = horaFin;
+
+            // 5) Tipo de problema
+            if (/mecanic/.test(textoNorm)) datos.tipo_mecanico = true;
+            if (/electric/.test(textoNorm)) datos.tipo_electrico = true;
+            if (/hidraulic/.test(textoNorm)) datos.tipo_hidraulico = true;
+            if (/instalaci/.test(textoNorm)) datos.tipo_instalaciones = true;
+            if (/ajuste\s+operacional|ajuste\s+de\s+maquina|ajuste\s+de\s+la\s+maquina/.test(textoNorm)) datos.tipo_ajuste = true;
+            if (/software/.test(textoNorm)) { datos.tipo_otro = true; datos.tipo_otro_especificar = 'Software'; }
+            if (/neumatic/.test(textoNorm)) { datos.tipo_otro = true; datos.tipo_otro_especificar = 'Neumático'; }
+            if (/estructural/.test(textoNorm)) { datos.tipo_otro = true; datos.tipo_otro_especificar = 'Estructural'; }
+            if (/ruido\s+anormal|ruido\s+raro/.test(textoNorm)) { datos.tipo_otro = true; datos.tipo_otro_especificar = 'Ruido anormal'; }
+
+            // 6) Causa
+            if (/desgaste/.test(textoNorm)) datos.causa_desgaste = true;
+            if (/mal\s*ajuste/.test(textoNorm)) datos.causa_mal_ajuste = true;
+            if (/falta\s+de\s+lubricacion/.test(textoNorm)) { datos.causa_otro = true; datos.causa_otro_especificar = 'Falta de lubricación'; }
+            if (/sobrecarga/.test(textoNorm)) { datos.causa_otro = true; datos.causa_otro_especificar = 'Sobrecarga'; }
+            if (/error\s+(de|del)\s+operador|error\s+humano/.test(textoNorm)) { datos.causa_otro = true; datos.causa_otro_especificar = 'Error de operador'; }
+
+            // 7) Capacitación
+            if (/capacitacion\s+(si|realizada|hecha|ok)|(realice|hice|dimos?)\s+(la\s+)?capacitacion/.test(textoNorm)) {
+                datos.cap_si = true;
+            } else if (/capacitacion\s+(no|pendiente)|no\s+(se\s+)?(realizo|hizo|dimos?)\s+(la\s+)?capacitacion/.test(textoNorm)) {
+                datos.cap_no = true;
+            }
+
+            // 8) Estado
+            if (/\bfinalizad|\bterminad|\bcompletad/.test(textoNorm)) datos.estado = 'Finalizada';
+            else if (/en\s+curso|en\s+proceso|trabajando/.test(textoNorm)) datos.estado = 'En curso';
+            else if (/pendiente|por\s+hacer|sin\s+empezar/.test(textoNorm)) datos.estado = 'Pendiente';
+            else if (/cancelad/.test(textoNorm)) datos.estado = 'Cancelada';
+
+            // 9) Descripción: intentar extraer lo que sigue a palabras clave
+            let descripcion = null;
+            const patronDesc = /(?:descripcion|trabajos?\s+realizados?|se\s+realizo|se\s+hizo|se\s+procedio|detalle|se\s+cambio|se\s+reemplazo|se\s+reparo|se\s+ajusto|se\s+limipo|se\s+limpio|se\s+lubrico|se\s+verifico|se\s+reviso)[:\s]+([^.;]+)/i;
+            const matchDesc = texto.match(patronDesc);
+            if (matchDesc) {
+                descripcion = matchDesc[1].trim();
+            }
+            // Si no, intentar capturar todo lo que venga después de "descripción:" o similar
+            if (!descripcion) {
+                const patron2 = /descripcion[:\s]+(.+)$/i;
+                const m2 = texto.match(patron2);
+                if (m2) descripcion = m2[1].trim();
+            }
+            // Si no, usar el texto completo como borrador para que el usuario edite
+            if (!descripcion) {
+                descripcion = texto.trim();
+            }
+            if (descripcion) datos.descripcion = descripcion;
+
+            return datos;
+        }
+
+        // --- Reconocimiento de voz ---
+        function initReconocimientoIA() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return null;
+            const rec = new SpeechRecognition();
+            rec.lang = 'es-UY';
+            rec.continuous = true;
+            rec.interimResults = true;
+            rec.maxAlternatives = 1;
+
+            rec.onresult = (event) => {
+                let textoFinal = '';
+                let textoInterino = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const res = event.results[i];
+                    if (res.isFinal) textoFinal += res[0].transcript + ' ';
+                    else textoInterino += res[0].transcript;
+                }
+                const textarea = document.getElementById('iaTextoComando');
+                if (textoFinal) {
+                    // Agregar al final del textarea
+                    textarea.value = (textarea.value + ' ' + textoFinal).trim();
+                }
+                if (textoInterino) {
+                    // Mostrar interino en el estado (no en el textarea para no ensuciar)
+                    document.getElementById('iaMicStatus').textContent = '👂 ' + textoInterino;
+                }
+            };
+
+            rec.onerror = (event) => {
+                console.warn('Error reconocimiento:', event.error);
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    mostrarToast('❌ Permiso de micrófono denegado. Habilitalo en el navegador.', 'error');
+                } else if (event.error === 'no-speech') {
+                    document.getElementById('iaMicStatus').textContent = 'No se detectó voz. Intentá de nuevo.';
+                } else {
+                    document.getElementById('iaMicStatus').textContent = '⚠️ Error: ' + event.error;
+                }
+                detenerReconocimientoIA();
+            };
+
+            rec.onend = () => {
+                // Si seguimos en modo "escuchando", reiniciar automáticamente
+                if (escuchandoIA) {
+                    try { rec.start(); } catch (e) { /* ya iniciado */ }
+                } else {
+                    document.getElementById('btnMic').classList.remove('escuchando');
+                    if (document.getElementById('iaMicStatus').textContent.startsWith('👂')) {
+                        document.getElementById('iaMicStatus').textContent = 'Detenido. Podés analizar el comando.';
+                    }
+                }
+            };
+
+            return rec;
+        }
+
+        function toggleReconocimientoIA() {
+            if (!recognitionIA) {
+                recognitionIA = initReconocimientoIA();
+            }
+            if (!recognitionIA) {
+                mostrarToast('❌ Este navegador no soporta dictado por voz. Usá Chrome/Edge o escribí el comando manualmente.', 'error');
+                return;
+            }
+            if (escuchandoIA) {
+                detenerReconocimientoIA();
+            } else {
+                iniciarReconocimientoIA();
+            }
+        }
+
+        function iniciarReconocimientoIA() {
+            try {
+                recognitionIA.start();
+                escuchandoIA = true;
+                document.getElementById('btnMic').classList.add('escuchando');
+                document.getElementById('btnMic').textContent = '⏹️
