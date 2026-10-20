@@ -5,18 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitud de Mantenimiento Correctivo - BOLPAR S.A.</title>
 
+    <!-- Meta etiquetas PWA -->
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <!-- Generación e inyección dinámica del Manifest PWA -->
     <script>
         (function() {
             const manifestData = {
                 "short_name": "BOLPAR Mant.",
                 "name": "Solicitud de Mantenimiento Correctivo - BOLPAR S.A.",
                 "icons": [
-                    { "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
-                    { "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
+                    {
+                        "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png",
+                        "type": "image/png",
+                        "sizes": "192x192",
+                        "purpose": "any maskable"
+                    },
+                    {
+                        "src": "https://cdn-icons-png.flaticon.com/512/1043/1043444.png",
+                        "type": "image/png",
+                        "sizes": "512x512",
+                        "purpose": "any maskable"
+                    }
                 ],
                 "start_url": "./index.html",
                 "background_color": "#2c3e50",
@@ -34,79 +46,547 @@
         })();
     </script>
 
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- SheetJS para Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Librerías para firma digital y gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1a1a1a; }
-        body { background-color: #f2f2f2; font-size: 9pt; padding: 12px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 1000px; background-color: #ffffff; border: 2px solid #2c3e50; padding: 6px 10px; display: flex; flex-direction: column; flex-shrink: 0; }
+        /* --- Estilos globales --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #1a1a1a;
+        }
+        body {
+            background-color: #f2f2f2;
+            font-size: 9pt;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #ffffff;
+            border: 2px solid #2c3e50;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
         .container > * { flex-shrink: 0; }
 
-        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; border-bottom: 2px solid #2c3e50; }
-        .header-table td { vertical-align: middle; padding: 2px 6px; }
-        .logo-title { font-size: 18pt; font-weight: 900; letter-spacing: 0.5px; color: #1a2a3a; }
-        .logo-title span { font-size: 9pt; font-weight: normal; }
-        .main-title { font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #2c3e50; }
-        .doc-number-container { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
-        .doc-number-container label { font-size: 10pt; font-weight: bold; color: #c0392b; }
-        .doc-number-container input { width: 70px; padding: 0 4px; font-size: 10pt; font-weight: bold; color: #c0392b; border: 1px solid transparent; border-radius: 3px; background: transparent; text-align: center; transition: 0.2s; }
-        .doc-number-container input:hover, .doc-number-container input:focus { border-color: #c0392b; background: #fff; outline: none; }
+        /* --- Barra de Asistente IA por Voz --- */
+        .ai-voice-bar {
+            width: 100%;
+            max-width: 1000px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+            transition: all 0.3s ease;
+        }
+        .ai-voice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .ai-voice-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        .ai-voice-title span {
+            color: #93c5fd;
+            font-size: 8pt;
+            font-weight: normal;
+        }
+        .ai-badge {
+            background-color: #3b82f6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 7.5pt;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .ai-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-mic {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: 1px solid #60a5fa;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 8.5pt;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .btn-mic:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-1px);
+        }
+        .btn-mic.recording {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            border-color: #f87171;
+            animation: pulse-mic 1.4s infinite;
+        }
+        @keyframes pulse-mic {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .btn-ai-process {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 8.5pt;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.2s;
+        }
+        .btn-ai-process:hover:not(:disabled) {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+        }
+        .btn-ai-process:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .ai-transcript-area {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .ai-transcript-input {
+            flex: 1;
+            background-color: rgba(15, 23, 42, 0.65);
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #f8fafc;
+            padding: 6px 10px;
+            font-size: 8.5pt;
+            resize: vertical;
+            min-height: 44px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .ai-transcript-input:focus {
+            border-color: #60a5fa;
+        }
+        .ai-transcript-input::placeholder {
+            color: #94a3b8;
+        }
+        .ai-hint {
+            margin-top: 5px;
+            font-size: 7.5pt;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .ai-example-chip {
+            background: rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            padding: 2px 7px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 7pt;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: 0.2s;
+        }
+        .ai-example-chip:hover {
+            background: rgba(59, 130, 246, 0.35);
+            border-color: #60a5fa;
+        }
+
+        /* --- Cabecera --- */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 4px;
+            border-bottom: 2px solid #2c3e50;
+        }
+        .header-table td {
+            vertical-align: middle;
+            padding: 2px 6px;
+        }
+        .logo-title {
+            font-size: 18pt;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            color: #1a2a3a;
+        }
+        .logo-title span {
+            font-size: 9pt;
+            font-weight: normal;
+        }
+        .main-title {
+            font-size: 11pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #2c3e50;
+        }
+        .doc-number-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+        }
+        .doc-number-container label {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #c0392b;
+        }
+        .doc-number-container input {
+            width: 70px;
+            padding: 0 4px;
+            font-size: 10pt;
+            font-weight: bold;
+            color: #c0392b;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            background: transparent;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .doc-number-container input:hover,
+        .doc-number-container input:focus {
+            border-color: #c0392b;
+            background: #fff;
+            outline: none;
+        }
         .meta-cell { font-size: 7.5pt; }
         .meta-cell div { margin-bottom: 1px; }
 
-        .grid-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
-        .grid-table td { border: 1px solid #7f8c8d; padding: 3px 6px; font-size: 8.5pt; }
-        .label { font-weight: bold; background-color: #f2f4f4; width: 20%; padding: 2px 6px; }
-        .value { width: 30%; padding: 1px 4px; position: relative; }
-        .value select, .value input { width: 100%; padding: 1px 3px; font-size: 8.5pt; border: 1px solid #bdc3c7; border-radius: 3px; background-color: #fff; box-sizing: border-box; height: 22px; }
-        .value .select-wrapper { display: flex; align-items: center; gap: 3px; }
-        .value .select-wrapper select { flex: 1; }
-        .btn-config { cursor: pointer; font-size: 12pt; padding: 0 3px; color: #5d6d7e; user-select: none; transition: 0.2s; line-height: 1; }
-        .btn-config:hover { color: #2c3e50; transform: scale(1.1); }
-        .menu-contextual { display: none; position: absolute; right: 0; top: 24px; background: white; border: 1px solid #bdc3c7; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); z-index: 100; min-width: 110px; padding: 4px 0; }
-        .menu-contextual.mostrar { display: block; }
-        .menu-contextual .opcion { padding: 4px 12px; font-size: 8.5pt; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .menu-contextual .opcion:hover { background-color: #eef2f5; }
-        .menu-contextual .opcion.danger { color: #c0392b; }
-        .menu-contextual .opcion.danger:hover { background-color: #fadbd8; }
+        /* --- Grid principal --- */
+        .grid-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 4px;
+        }
+        .grid-table td {
+            border: 1px solid #7f8c8d;
+            padding: 3px 6px;
+            font-size: 8.5pt;
+        }
+        .label {
+            font-weight: bold;
+            background-color: #f2f4f4;
+            width: 20%;
+            padding: 2px 6px;
+        }
+        .value {
+            width: 30%;
+            padding: 1px 4px;
+            position: relative;
+        }
+        .value select, .value input {
+            width: 100%;
+            padding: 1px 3px;
+            font-size: 8.5pt;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            background-color: #fff;
+            box-sizing: border-box;
+            height: 22px;
+        }
+        .value .select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .value .select-wrapper select {
+            flex: 1;
+        }
+        .btn-config {
+            cursor: pointer;
+            font-size: 12pt;
+            padding: 0 3px;
+            color: #5d6d7e;
+            user-select: none;
+            transition: 0.2s;
+            line-height: 1;
+        }
+        .btn-config:hover {
+            color: #2c3e50;
+            transform: scale(1.1);
+        }
+        .menu-contextual {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 24px;
+            background: white;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            z-index: 100;
+            min-width: 110px;
+            padding: 4px 0;
+        }
+        .menu-contextual.mostrar {
+            display: block;
+        }
+        .menu-contextual .opcion {
+            padding: 4px 12px;
+            font-size: 8.5pt;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .menu-contextual .opcion:hover {
+            background-color: #eef2f5;
+        }
+        .menu-contextual .opcion.danger {
+            color: #c0392b;
+        }
+        .menu-contextual .opcion.danger:hover {
+            background-color: #fadbd8;
+        }
 
-        .campo-requerido { border-color: #e74c3c !important; background-color: #fff5f5 !important; }
-        .mensaje-error { color: #e74c3c; font-size: 7.5pt; font-weight: bold; display: none; margin-top: 2px; }
+        .campo-requerido {
+            border-color: #e74c3c !important;
+            background-color: #fff5f5 !important;
+        }
+        .campo-actualizado-ia {
+            animation: highlight-ia 2.2s ease-out;
+        }
+        @keyframes highlight-ia {
+            0% { background-color: #bbf7d0; border-color: #16a34a; }
+            100% { background-color: transparent; }
+        }
+        .mensaje-error {
+            color: #e74c3c;
+            font-size: 7.5pt;
+            font-weight: bold;
+            display: none;
+            margin-top: 2px;
+        }
 
-        .section-box { border: 1px solid #7f8c8d; margin-bottom: 4px; background-color: #fafafa; flex-shrink: 0; }
-        .section-header { background-color: #34495e; color: #ffffff; font-weight: bold; font-size: 8pt; padding: 2px 8px; text-transform: uppercase; letter-spacing: 0.3px; }
-        .checkbox-grid { width: 100%; border-collapse: collapse; padding: 2px 4px; }
-        .checkbox-grid td { padding: 2px 6px; font-size: 8pt; vertical-align: middle; }
-        .checkbox-grid input[type="checkbox"] { width: 14px; height: 14px; margin-right: 4px; vertical-align: middle; accent-color: #2c3e50; cursor: pointer; }
-        .checkbox-grid label { vertical-align: middle; cursor: pointer; font-weight: normal; margin-right: 8px; }
-        .checkbox-grid select { padding: 1px 3px; font-size: 8pt; border: 1px solid #bdc3c7; border-radius: 3px; background-color: #fff; margin-left: 2px; height: 20px; }
-        .note-box { font-size: 7.5pt; padding: 2px 8px; background-color: #eef2f5; border-top: 1px solid #d5dbdb; color: #2c3e50; }
+        /* --- Secciones --- */
+        .section-box {
+            border: 1px solid #7f8c8d;
+            margin-bottom: 4px;
+            background-color: #fafafa;
+            flex-shrink: 0;
+        }
+        .section-header {
+            background-color: #34495e;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 8pt;
+            padding: 2px 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .checkbox-grid {
+            width: 100%;
+            border-collapse: collapse;
+            padding: 2px 4px;
+        }
+        .checkbox-grid td {
+            padding: 2px 6px;
+            font-size: 8pt;
+            vertical-align: middle;
+        }
+        .checkbox-grid input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            margin-right: 4px;
+            vertical-align: middle;
+            accent-color: #2c3e50;
+            cursor: pointer;
+        }
+        .checkbox-grid label {
+            vertical-align: middle;
+            cursor: pointer;
+            font-weight: normal;
+            margin-right: 8px;
+        }
+        .checkbox-grid select {
+            padding: 1px 3px;
+            font-size: 8pt;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            background-color: #fff;
+            margin-left: 2px;
+            height: 20px;
+        }
+        .note-box {
+            font-size: 7.5pt;
+            padding: 2px 8px;
+            background-color: #eef2f5;
+            border-top: 1px solid #d5dbdb;
+            color: #2c3e50;
+        }
 
-        .description-box { border: 1px solid #7f8c8d; margin-bottom: 4px; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 40px; }
-        .description-header { background-color: #f2f4f4; color: #2c3e50; font-weight: bold; font-size: 8pt; padding: 2px 8px; border-bottom: 1px solid #7f8c8d; text-transform: uppercase; flex-shrink: 0; }
-        .description-box textarea { width: 100%; flex: 1; padding: 4px 8px; border: none; font-size: 8.5pt; resize: none; font-family: inherit; outline: none; background: #ffffff; min-height: 30px; }
+        /* --- Descripción --- */
+        .description-box {
+            border: 1px solid #7f8c8d;
+            margin-bottom: 4px;
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 45px;
+        }
+        .description-header {
+            background-color: #f2f4f4;
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 8pt;
+            padding: 2px 8px;
+            border-bottom: 1px solid #7f8c8d;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .description-box textarea {
+            width: 100%;
+            flex: 1;
+            padding: 4px 8px;
+            border: none;
+            font-size: 8.5pt;
+            resize: none;
+            font-family: inherit;
+            outline: none;
+            background: #ffffff;
+            min-height: 36px;
+        }
 
-        .cap-row { border: 1px solid #7f8c8d; background-color: #fafafa; padding: 2px 8px; margin-bottom: 4px; font-size: 8.5pt; flex-shrink: 0; }
-        .cap-row input[type="checkbox"] { width: 14px; height: 14px; margin-right: 4px; vertical-align: middle; accent-color: #2c3e50; cursor: pointer; }
-        .cap-row label { vertical-align: middle; cursor: pointer; margin-right: 15px; }
+        /* --- Capacitación --- */
+        .cap-row {
+            border: 1px solid #7f8c8d;
+            background-color: #fafafa;
+            padding: 2px 8px;
+            margin-bottom: 4px;
+            font-size: 8.5pt;
+            flex-shrink: 0;
+        }
+        .cap-row input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            margin-right: 4px;
+            vertical-align: middle;
+            accent-color: #2c3e50;
+            cursor: pointer;
+        }
+        .cap-row label {
+            vertical-align: middle;
+            cursor: pointer;
+            margin-right: 15px;
+        }
 
-        .signatures-table { width: 100%; border-collapse: collapse; margin-top: 4px; flex-shrink: 0; }
-        .signatures-table td { width: 50%; text-align: center; vertical-align: middle; padding: 0 10px; }
-        .sig-line { border-top: 1px dashed #2c3e50; margin-top: 4px; padding-top: 2px; font-size: 8pt; font-weight: bold; color: #34495e; text-transform: uppercase; }
-        .sig-line .firma-container { margin-top: -6px; margin-bottom: -4px; }
-        .firma-canvas { border: 1px dashed #7f8c8d; border-radius: 4px; background-color: #fafafa; width: 100%; height: 40px; display: block; touch-action: none; }
-        .firma-botones { margin-top: 2px; display: flex; gap: 6px; justify-content: center; }
-        .firma-botones button { font-size: 7pt; padding: 1px 6px; }
+        /* --- Firmas --- */
+        .signatures-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+        .signatures-table td {
+            width: 50%;
+            text-align: center;
+            vertical-align: middle;
+            padding: 0 10px;
+        }
+        .sig-line {
+            border-top: 1px dashed #2c3e50;
+            margin-top: 4px;
+            padding-top: 2px;
+            font-size: 8pt;
+            font-weight: bold;
+            color: #34495e;
+            text-transform: uppercase;
+        }
+        .sig-line .firma-container {
+            margin-top: -6px;
+            margin-bottom: -4px;
+        }
+        .firma-canvas {
+            border: 1px dashed #7f8c8d;
+            border-radius: 4px;
+            background-color: #fafafa;
+            width: 100%;
+            height: 40px;
+            display: block;
+            touch-action: none;
+        }
+        .firma-botones {
+            margin-top: 2px;
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+        .firma-botones button {
+            font-size: 7pt;
+            padding: 1px 6px;
+        }
 
-        .action-bar-wrapper { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 8px; }
-        .action-bar-wrapper .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
-        .btn { padding: 4px 14px; font-size: 8.5pt; font-weight: bold; border: none; border-radius: 3px; cursor: pointer; text-transform: uppercase; transition: 0.2s; white-space: nowrap; }
+        /* --- Botones y acciones --- */
+        .action-bar-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        .action-bar-wrapper .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 4px 14px;
+            font-size: 8.5pt;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
         .btn-success { background-color: #27ae60; color: white; }
         .btn-success:hover:not(:disabled) { background-color: #1e8449; }
         .btn-success:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -118,66 +598,280 @@
         .btn-danger:hover { background-color: #922b21; }
         .btn-primary { background-color: #2c3e50; color: white; }
         .btn-primary:hover { background-color: #1a2a3a; }
-        .btn-ia { background: linear-gradient(135deg, #8e44ad, #3498db); color: white; }
-        .btn-ia:hover { background: linear-gradient(135deg, #7d3c98, #2874a6); }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover { background-color: #5a6268; }
         .btn-sm { padding: 2px 8px; font-size: 7.5pt; }
 
-        #listaRegistros { width: 100%; max-width: 1000px; margin-bottom: 8px; border: 1px solid #2c3e50; background-color: #fff; padding: 6px 10px; display: none; max-height: 500px; overflow-y: auto; }
-        #listaRegistros .filtros-busqueda { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; align-items: center; }
-        #listaRegistros .filtros-busqueda input, #listaRegistros .filtros-busqueda select { padding: 2px 6px; font-size: 8.5pt; border: 1px solid #bdc3c7; border-radius: 3px; height: 24px; }
-        .registro-item-lista { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; border-bottom: 1px solid #e0e0e0; cursor: pointer; font-size: 8pt; }
+        /* --- Modal de Previsualización IA y Modales Custom --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px 26px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        }
+        .modal-content h2 { color: #27ae60; font-size: 15pt; margin-bottom: 6px; }
+        .modal-content p { font-size: 9.5pt; margin-bottom: 14px; color: #334155; }
+
+        /* Modal ancho para Previsualización de IA */
+        .modal-preview-ia {
+            background: #ffffff;
+            border-radius: 10px;
+            max-width: 720px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 2px solid #2563eb;
+            overflow: hidden;
+        }
+        .modal-preview-header {
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-preview-header h3 {
+            color: white;
+            font-size: 11pt;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-preview-body {
+            padding: 14px 16px;
+            overflow-y: auto;
+            font-size: 8.5pt;
+        }
+        .preview-transcript-box {
+            background: #f1f5f9;
+            border-left: 4px solid #3b82f6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            font-style: italic;
+            color: #334155;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .preview-field {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 8px;
+        }
+        .preview-field.detected {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+        .preview-field label {
+            display: block;
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #475569;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .preview-field input,
+        .preview-field select,
+        .preview-field textarea {
+            width: 100%;
+            padding: 4px 6px;
+            font-size: 8.5pt;
+            border: 1px solid #94a3b8;
+            border-radius: 4px;
+            background: white;
+        }
+        .preview-badges-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .preview-check-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 14px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 8pt;
+            cursor: pointer;
+            user-select: none;
+        }
+        .preview-check-pill input {
+            width: auto;
+            margin: 0;
+        }
+        .preview-check-pill.active {
+            background: #dbeafe;
+            border-color: #2563eb;
+            color: #1e40af;
+            font-weight: bold;
+        }
+        .modal-preview-footer {
+            padding: 10px 16px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* --- Lista de registros --- */
+        #listaRegistros {
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 8px;
+            border: 1px solid #2c3e50;
+            background-color: #fff;
+            padding: 6px 10px;
+            display: none;
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 4px;
+        }
+        #listaRegistros .filtros-busqueda {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+        #listaRegistros .filtros-busqueda input,
+        #listaRegistros .filtros-busqueda select {
+            padding: 2px 6px;
+            font-size: 8.5pt;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            height: 24px;
+        }
+        .registro-item-lista {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 6px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            font-size: 8pt;
+        }
         .registro-item-lista:hover { background-color: #f0f5fa; }
-        .registro-item-lista .info { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .registro-item-lista .info {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
         .registro-item-lista .nro { font-weight: bold; min-width: 50px; }
-        .registro-desc-preview { background-color: #f1f5f9; color: #334155; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 7.5pt; }
-        .registro-item-lista .estado-badge { display: inline-block; padding: 0 6px; border-radius: 10px; font-weight: bold; font-size: 7pt; text-transform: uppercase; }
+
+        .registro-desc-preview {
+            background-color: #f1f5f9;
+            color: #334155;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            max-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 7.5pt;
+        }
+
+        .registro-item-lista .estado-badge {
+            display: inline-block;
+            padding: 0 6px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 7pt;
+            text-transform: uppercase;
+        }
         .estado-pendiente { background: #f1c40f; color: #1a1a1a; }
         .estado-encurso { background: #3498db; color: white; }
         .estado-finalizada { background: #2ecc71; color: white; }
         .estado-cancelada { background: #e74c3c; color: white; }
 
-        #detalleRegistro { width: 100%; max-width: 1000px; margin-bottom: 8px; border: 2px solid #2c3e50; padding: 6px 10px; background-color: #fcfcfc; display: none; max-height: 450px; overflow-y: auto; }
+        /* --- Detalle --- */
+        #detalleRegistro {
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 8px;
+            border: 2px solid #2c3e50;
+            padding: 6px 10px;
+            background-color: #fcfcfc;
+            display: none;
+            max-height: 450px;
+            overflow-y: auto;
+            border-radius: 4px;
+        }
         .cerrar-detalle { text-align: right; margin-bottom: 4px; }
         .firma-img { max-width: 150px; max-height: 50px; border: 1px dashed #7f8c8d; }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px 30px; border-radius: 8px; text-align: center; max-width: 350px; }
-        .modal-content h2 { color: #27ae60; font-size: 16pt; margin-bottom: 6px; }
-        .modal-content p { font-size: 10pt; margin-bottom: 10px; }
-        .toast { padding: 6px 12px; margin-bottom: 4px; border-radius: 4px; font-weight: bold; display: none; font-size: 8.5pt; width: 100%; max-width: 1000px; }
+        .toast {
+            padding: 6px 12px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none;
+            font-size: 8.5pt;
+            width: 100%;
+            max-width: 1000px;
+        }
         .toast-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .toast-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .toast-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
 
-        .graficos-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 10px; }
-        .grafico-wrapper { flex: 1 1 300px; min-width: 250px; max-width: 450px; background: #fafafa; border-radius: 6px; padding: 8px; border: 1px solid #e0e0e0; }
-        .grafico-wrapper h4 { text-align: center; font-size: 8.5pt; margin-bottom: 4px; color: #2c3e50; }
-        .grafico-wrapper canvas { max-height: 200px; max-width: 100%; }
+        /* --- Gráficos --- */
+        .graficos-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .grafico-wrapper {
+            flex: 1 1 300px;
+            min-width: 250px;
+            max-width: 450px;
+            background: #fafafa;
+            border-radius: 6px;
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .grafico-wrapper h4 {
+            text-align: center;
+            font-size: 8.5pt;
+            margin-bottom: 4px;
+            color: #2c3e50;
+        }
+        .grafico-wrapper canvas {
+            max-height: 200px;
+            max-width: 100%;
+        }
 
-        /* ==== ESTILOS NUEVOS: ASISTENTE IA ==== */
-        .modal-content-ia { background: white; padding: 16px 20px; border-radius: 10px; max-width: 640px; width: 95%; max-height: 92vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .ia-mic-wrap { text-align: center; margin: 14px 0; }
-        .btn-mic { width: 78px; height: 78px; border-radius: 50%; border: 3px solid #2c3e50; background: #ecf0f1; font-size: 32pt; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
-        .btn-mic:hover { transform: scale(1.05); background: #d6dbdf; }
-        .btn-mic.escuchando { background: #e74c3c; border-color: #c0392b; color: white; animation: pulseMic 1.4s infinite; }
-        @keyframes pulseMic { 0% { box-shadow: 0 0 0 0 rgba(231,76,60,0.6); } 70% { box-shadow: 0 0 0 22px rgba(231,76,60,0); } 100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); } }
-        .ia-status { margin-top: 8px; font-size: 9pt; color: #7f8c8d; min-height: 16px; }
-        .ia-transcript { width: 100%; min-height: 70px; padding: 8px; font-size: 9pt; border: 1px solid #bdc3c7; border-radius: 6px; resize: vertical; font-family: inherit; color: #2c3e50; background: #f8fafc; }
-        .ia-hint { font-size: 8pt; color: #7f8c8d; margin: 6px 0; }
-        .ia-hint code { background: #eef2f5; padding: 1px 5px; border-radius: 3px; color: #c0392b; font-size: 7.5pt; }
-
-        .preview-field { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-bottom: 1px solid #ecf0f1; background: #fdfdfd; border-radius: 4px; margin-bottom: 4px; }
-        .preview-field.desactivado { opacity: 0.45; background: #f5f5f5; }
-        .preview-field input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; accent-color: #27ae60; cursor: pointer; }
-        .preview-field .pf-label { flex-shrink: 0; font-weight: bold; min-width: 120px; font-size: 8.5pt; color: #34495e; }
-        .preview-field .pf-valor { flex: 1; }
-        .preview-field .pf-valor input, .preview-field .pf-valor select, .preview-field .pf-valor textarea { width: 100%; padding: 4px 6px; font-size: 8.5pt; border: 1px solid #bdc3c7; border-radius: 4px; font-family: inherit; background: #fff; }
-        .preview-field .pf-valor textarea { min-height: 44px; resize: vertical; }
-        .preview-field .pf-badge { font-size: 7pt; background: #eaf7ee; color: #1e8449; padding: 1px 6px; border-radius: 8px; font-weight: bold; flex-shrink: 0; }
-        .preview-field .pf-badge.auto { background: #fff4e6; color: #b9770e; }
-
-        .ia-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
-
+        /* --- Responsive --- */
         @media (max-width: 700px) {
             body { padding: 4px; font-size: 8pt; }
             .container { padding: 4px 6px; }
@@ -192,14 +886,17 @@
             .registro-desc-preview { max-width: 130px; }
             .menu-contextual { right: 0; top: 20px; }
             .grafico-wrapper { flex: 1 1 100%; max-width: 100%; }
-            .preview-field { flex-wrap: wrap; }
-            .preview-field .pf-label { min-width: 100%; }
+            .ai-voice-header { flex-direction: column; align-items: flex-start; }
         }
 
         @media print {
-            .action-bar-wrapper, .btn, #listaRegistros, #seccionKPIs, #detalleRegistro, .modal-overlay, .toast, .firma-botones, .btn-config, .menu-contextual, .btn-ia { display: none !important; }
+            .ai-voice-bar, .action-bar-wrapper, .btn, #listaRegistros, #seccionKPIs,
+            #detalleRegistro, .modal-overlay, .toast, .firma-botones,
+            .btn-config, .menu-contextual {
+                display: none !important;
+            }
             body { background: white; padding: 0; }
-            .container { border: none; max-width: 100%; min-height: auto; }
+            .container { border: none; max-width: 100%; min-height: auto; box-shadow: none; }
             .firma-canvas { border: 1px solid #aaa; }
         }
     </style>
@@ -208,8 +905,173 @@
 
     <div id="toast" class="toast"></div>
 
+    <!-- Barra de Asistente de Voz con IA -->
+    <div class="ai-voice-bar">
+        <div class="ai-voice-header">
+            <div class="ai-voice-title">
+                <span class="ai-badge">✨ IA VOZ</span>
+                Dictado Inteligente de Mantenimiento
+                <span>(Dicta o escribe los datos y previsualiza antes de aceptar)</span>
+            </div>
+            <div class="ai-controls">
+                <button type="button" class="btn-mic" id="btnMic" onclick="toggleReconocimientoVoz()">
+                    <span id="iconoMic">🎙️</span> <span id="textoMic">Iniciar Dictado por Voz</span>
+                </button>
+                <button type="button" class="btn-ai-process" id="btnProcesarIA" onclick="procesarComandoConIA()">
+                    🧠 Analizar y Previsualizar
+                </button>
+                <button type="button" class="btn btn-sm" style="background:#475569; color:white;" onclick="limpiarTextoVoz()" title="Limpiar texto dictado">
+                    🧹
+                </button>
+            </div>
+        </div>
+        <div class="ai-transcript-area">
+            <textarea id="textoComandoVoz" class="ai-transcript-input" placeholder="Pulsa 'Iniciar Dictado por Voz' y habla claro, o escribe aquí... Ejemplo: 'En la máquina Fondera 1 hubo un problema mecánico y eléctrico por desgaste a las 08:30, finalizó a las 09:15. El técnico Michael Pintos cambió rodamientos y correa con el jefe Guillermo. Sí se realizó capacitación.'"></textarea>
+        </div>
+        <div class="ai-hint">
+            <div>💡 <strong>Sugerencia:</strong> Puedes mencionar máquina, técnico, jefe, horas, tipo de falla, causa, descripción y si hubo capacitación.</div>
+            <div>
+                <span class="ai-example-chip" onclick="cargarEjemploVoz(1)">📋 Probar Ejemplo 1</span>
+                <span class="ai-example-chip" onclick="cargarEjemploVoz(2)">📋 Probar Ejemplo 2</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Previsualización de IA antes de aceptar -->
+    <div class="modal-overlay" id="modalPrevisualizacionIA">
+        <div class="modal-preview-ia">
+            <div class="modal-preview-header">
+                <h3>🔍 Previsualización de Datos Extraídos por IA</h3>
+                <button class="btn btn-sm btn-danger" onclick="cerrarModalPrevisualizacion()">✕</button>
+            </div>
+            <div class="modal-preview-body">
+                <div class="preview-transcript-box">
+                    <strong>🗣️ Comando interpretado:</strong> "<span id="prevTranscripcionTexto"></span>"
+                </div>
+                <p style="margin-bottom: 10px; color: #475569; font-size: 8pt;">
+                    Verifica o corrige cualquier dato antes de aplicarlo al formulario oficial. Los campos resaltados en <strong style="color:#16a34a;">verde</strong> fueron detectados en tu comando:
+                </p>
+
+                <div class="preview-grid">
+                    <div class="preview-field" id="fieldPrevMaquina">
+                        <label>🛠️ Máquina</label>
+                        <select id="prevMaquina" onchange="alCambiarMaquinaPreview()"></select>
+                    </div>
+                    <div class="preview-field" id="fieldPrevTecnico">
+                        <label>👷 Técnico Mantenimiento</label>
+                        <select id="prevTecnico">
+                            <option value="">-- Sin cambios / Seleccione --</option>
+                            <option value="Michael Pintos">Michael Pintos</option>
+                            <option value="Nicolás Morel">Nicolás Morel</option>
+                        </select>
+                    </div>
+                    <div class="preview-field" id="fieldPrevJefe">
+                        <label>👤 Jefe de Máquina</label>
+                        <select id="prevJefe"></select>
+                    </div>
+                    <div class="preview-field" id="fieldPrevEstado">
+                        <label>📌 Estado</label>
+                        <select id="prevEstado">
+                            <option value="Finalizada">Finalizada</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En curso">En curso</option>
+                            <option value="Cancelada">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="preview-field" id="fieldPrevFecha">
+                        <label>📅 Fecha Solicitud</label>
+                        <input type="date" id="prevFecha">
+                    </div>
+                    <div class="preview-field" id="fieldPrevHoraSol">
+                        <label>⏰ Hora Solicitud</label>
+                        <input type="time" id="prevHoraSolicitud" onchange="recalcularPreviewTiempos()">
+                    </div>
+                    <div class="preview-field" id="fieldPrevHoraLleg">
+                        <label>🚶 Hora Llegada</label>
+                        <input type="time" id="prevHoraLlegada" onchange="recalcularPreviewTiempos()">
+                    </div>
+                    <div class="preview-field" id="fieldPrevHoraFin">
+                        <label>🏁 Hora Finalización</label>
+                        <input type="time" id="prevHoraFinalizacion" onchange="recalcularPreviewTiempos()">
+                    </div>
+                </div>
+
+                <!-- Tipo de Problema en Previsualización -->
+                <div class="preview-field" id="fieldPrevTipoProblema" style="margin-bottom: 10px;">
+                    <label>⚙️ Tipo de Problema / Falla</label>
+                    <div class="preview-badges-group">
+                        <label class="preview-check-pill"><input type="checkbox" id="prevMecanico"> Mecánico</label>
+                        <label class="preview-check-pill"><input type="checkbox" id="prevElectrico"> Eléctrico</label>
+                        <label class="preview-check-pill"><input type="checkbox" id="prevHidraulico"> Hidráulico</label>
+                        <label class="preview-check-pill"><input type="checkbox" id="prevInstalaciones"> Instalaciones</label>
+                        <label class="preview-check-pill"><input type="checkbox" id="prevAjuste"> Ajuste Operacional</label>
+                        <label class="preview-check-pill"><input type="checkbox" id="prevOtroTipoCheck"> Otros:</label>
+                        <select id="prevOtroTipoSelect" style="width: auto; min-width: 130px;">
+                            <option value="">-- Especificar --</option>
+                            <option value="Software">Software</option>
+                            <option value="Neumático">Neumático</option>
+                            <option value="Estructural">Estructural</option>
+                            <option value="Ruido anormal">Ruido anormal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Causa del Problema en Previsualización -->
+                <div class="preview-field" id="fieldPrevCausa" style="margin-bottom: 10px;">
+                    <label>🔎 Causa del Problema</label>
+                    <div class="preview-badges-group">
+                        <label class="preview-check-pill"><input type="checkbox" id="prevDesgaste"> Por Desgaste</label>
+                        <label class="preview-check-pill"><input type="checkbox" id="prevMalAjuste"> Por Mal Ajuste</label>
+                        <label class="preview-check-pill"><input type="checkbox" id="prevOtraCausaCheck"> Otros:</label>
+                        <select id="prevOtraCausaSelect" style="width: auto; min-width: 140px;">
+                            <option value="">-- Especificar --</option>
+                            <option value="Falta de lubricación">Falta de lubricación</option>
+                            <option value="Sobrecarga">Sobrecarga</option>
+                            <option value="Fallo eléctrico">Fallo eléctrico</option>
+                            <option value="Error de operador">Error de operador</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Capacitación en Previsualización -->
+                <div class="preview-field" id="fieldPrevCapacitacion" style="margin-bottom: 10px;">
+                    <label>🎓 ¿Se realizó capacitación?</label>
+                    <div class="preview-badges-group">
+                        <label class="preview-check-pill"><input type="radio" name="prevCapRadio" id="prevCapSi" value="SI"> SÍ</label>
+                        <label class="preview-check-pill"><input type="radio" name="prevCapRadio" id="prevCapNo" value="NO"> NO</label>
+                        <label class="preview-check-pill"><input type="radio" name="prevCapRadio" id="prevCapNinguno" value="" checked> Sin especificar</label>
+                    </div>
+                </div>
+
+                <!-- Descripción en Previsualización -->
+                <div class="preview-field" id="fieldPrevDescripcion">
+                    <label>📝 Descripción redactada de los Trabajos Realizados</label>
+                    <textarea id="prevDescripcion" rows="3" placeholder="Descripción técnica del trabajo..."></textarea>
+                </div>
+            </div>
+            <div class="modal-preview-footer">
+                <button type="button" class="btn btn-danger" onclick="cerrarModalPrevisualizacion()">✕ Cancelar / Reintentar</button>
+                <button type="button" class="btn btn-success" onclick="aplicarDatosPrevisualizados()">✅ Aceptar y Completar Formulario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal genérico para Entrada / Confirmación -->
+    <div class="modal-overlay" id="modalDialogoCustom">
+        <div class="modal-content">
+            <h3 id="dialogoTitulo" style="margin-bottom: 8px; color: #2c3e50;">Confirmación</h3>
+            <p id="dialogoMensaje"></p>
+            <input type="text" id="dialogoInput" style="display:none; width:100%; padding:6px 8px; margin-bottom:12px; border:1px solid #bdc3c7; border-radius:4px;">
+            <div style="display:flex; justify-content:center; gap:10px;">
+                <button class="btn btn-danger" id="btnDialogoCancelar">Cancelar</button>
+                <button class="btn btn-success" id="btnDialogoAceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container" id="app">
 
+        <!-- Modal de éxito -->
         <div class="modal-overlay" id="modalExito">
             <div class="modal-content">
                 <h2 id="modalTitulo">✅ ¡Guardado!</h2>
@@ -218,59 +1080,12 @@
             </div>
         </div>
 
-        <!-- ===== MODAL ASISTENTE IA ===== -->
-        <div class="modal-overlay" id="modalIA">
-            <div class="modal-content-ia">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #2c3e50; padding-bottom:8px; margin-bottom:12px;">
-                    <h2 style="margin:0; color:#2c3e50; font-size:14pt;">🤖 Asistente IA de Voz</h2>
-                    <button class="btn btn-danger btn-sm" onclick="cerrarModalIA()">✕</button>
-                </div>
-
-                <!-- Paso 1: Captura -->
-                <div id="iaPasoCaptura">
-                    <p class="ia-hint">
-                        Dictá los datos de la solicitud o escribí el comando. El asistente interpreta lo que decís y te muestra una previsualización antes de aplicar los cambios.
-                    </p>
-
-                    <div class="ia-mic-wrap">
-                        <button class="btn-mic" id="btnMic" onclick="toggleReconocimientoIA()">🎤</button>
-                        <div id="iaMicStatus" class="ia-status">Presioná el micrófono para dictar</div>
-                    </div>
-
-                    <label style="font-weight:bold; font-size:8.5pt; color:#34495e;">Transcripción / Comando:</label>
-                    <textarea id="iaTextoComando" class="ia-transcript" placeholder="Ejemplo: Máquina Coteadora, técnico Michael Pintos, jefe Ángel, falla mecánica por desgaste, se cambió el rodamiento, capacitación sí..."></textarea>
-
-                    <div class="ia-hint">
-                        💡 <strong>Ejemplos:</strong><br>
-                        <code>Máquina Fondera 1, falla eléctrica, se reparó el tablero</code><br>
-                        <code>Llegada 10:30, finalización 11:45, se cambió rodamiento</code>
-                    </div>
-
-                    <div class="ia-footer">
-                        <button class="btn btn-primary" onclick="limpiarComandoIA()">🗑 Limpiar</button>
-                        <button class="btn btn-info" onclick="analizarComandoIA()">🔍 Analizar comando</button>
-                    </div>
-                </div>
-
-                <!-- Paso 2: Previsualización -->
-                <div id="iaPasoPreview" style="display:none;">
-                    <h4 style="margin-bottom:6px; color:#2c3e50;">📋 Verificá los datos detectados</h4>
-                    <p class="ia-hint" style="margin-bottom:10px;">
-                        Desmarcá lo que no quieras aplicar y editá cualquier valor antes de confirmar.
-                    </p>
-                    <div id="iaPreviewContenido"></div>
-                    <div class="ia-footer">
-                        <button class="btn btn-warning" onclick="volverCapturaIA()">← Volver a editar</button>
-                        <button class="btn btn-success" onclick="aplicarDatosIA()">✅ Aplicar al formulario</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Cabecera -->
         <table class="header-table">
             <tr>
-                <td class="logo-cell" style="width:25%;"><div class="logo-title">BOLPAR <span>s.a.</span></div></td>
+                <td class="logo-cell" style="width:25%;">
+                    <div class="logo-title">BOLPAR <span>s.a.</span></div>
+                </td>
                 <td class="title-cell" style="width:45%; text-align:center;">
                     <div class="main-title">Solicitud de Mantenimiento Correctivo</div>
                     <div class="doc-number-container">
@@ -292,15 +1107,21 @@
         <table class="grid-table">
             <tr>
                 <td class="label">FECHA SOLICITUD:</td>
-                <td class="value"><input type="date" id="fechaSolicitud"></td>
+                <td class="value">
+                    <input type="date" id="fechaSolicitud">
+                </td>
                 <td class="label">HORA DE SOLICITUD:</td>
-                <td class="value"><input type="time" id="horaSolicitud" onchange="actualizarHoraLlegada()"></td>
+                <td class="value">
+                    <input type="time" id="horaSolicitud" onchange="actualizarHoraLlegada()">
+                </td>
             </tr>
             <tr>
                 <td class="label">MÁQUINA <span style="color:red;">*</span>:</td>
                 <td class="value">
                     <div class="select-wrapper">
-                        <select id="maquina" onchange="actualizarDatosMaquina()"></select>
+                        <select id="maquina" onchange="actualizarDatosMaquina()">
+                            <!-- Las opciones se cargarán desde Firebase dinámicamente -->
+                        </select>
                         <span class="btn-config" onclick="toggleMenu('maquina')" title="Gestionar opciones">⚙️</span>
                         <div id="menuMaquina" class="menu-contextual">
                             <div class="opcion" onclick="agregarOpcion('maquina')">➕ Añadir</div>
@@ -323,7 +1144,9 @@
                 <td class="label">JEFE DE MÁQUINA <span style="color:red;">*</span>:</td>
                 <td class="value">
                     <div class="select-wrapper">
-                        <select id="jefeMaquina"></select>
+                        <select id="jefeMaquina">
+                            <!-- Las opciones se cargarán desde Firebase dinámicamente -->
+                        </select>
                         <span class="btn-config" onclick="toggleMenu('jefeMaquina')" title="Gestionar opciones">⚙️</span>
                         <div id="menuJefeMaquina" class="menu-contextual">
                             <div class="opcion" onclick="agregarOpcion('jefeMaquina')">➕ Añadir</div>
@@ -333,7 +1156,9 @@
                     <div class="mensaje-error" id="errorJefe">Seleccione un jefe.</div>
                 </td>
                 <td class="label">HORA DE LLEGADA:</td>
-                <td class="value"><input type="time" id="horaLlegada"></td>
+                <td class="value">
+                    <input type="time" id="horaLlegada" onchange="calcularDuracion()">
+                </td>
             </tr>
             <tr>
                 <td class="label">ESTADO:</td>
@@ -346,17 +1171,22 @@
                     </select>
                 </td>
                 <td class="label">HORA DE FINALIZACIÓN:</td>
-                <td class="value"><input type="time" id="horaFinalizacion" onchange="calcularDuracion()"></td>
+                <td class="value">
+                    <input type="time" id="horaFinalizacion" onchange="calcularDuracion()">
+                </td>
             </tr>
             <tr>
                 <td class="label">DURACIÓN (min):</td>
-                <td class="value"><input type="text" id="duracion" readonly style="background:#f5f5f5;"></td>
+                <td class="value">
+                    <input type="text" id="duracion" readonly style="background:#f5f5f5;">
+                </td>
                 <td class="label"></td>
                 <td class="value"></td>
             </tr>
         </table>
 
-        <div class="section-box">
+        <!-- Tipo de Problema -->
+        <div class="section-box" id="boxTipoProblema">
             <div class="section-header">Tipo de Problema / Falla</div>
             <table class="checkbox-grid">
                 <tr>
@@ -381,7 +1211,8 @@
             </table>
         </div>
 
-        <div class="section-box">
+        <!-- Causa -->
+        <div class="section-box" id="boxCausaProblema">
             <div class="section-header">Causa del Problema</div>
             <table class="checkbox-grid">
                 <tr>
@@ -402,23 +1233,28 @@
             <div class="note-box"><strong>* PLAN DE ACCIÓN:</strong> REALIZAR CAPACITACIÓN AL PERSONAL SOBRE EL PROCEDIMIENTO DE AJUSTE DE LA MÁQUINA.</div>
         </div>
 
+        <!-- Descripción -->
         <div class="description-box">
             <div class="description-header">Descripción de los Trabajos Realizados</div>
-            <textarea id="descripcion" placeholder="Escribe aquí la descripción detallada..."></textarea>
+            <textarea id="descripcion" placeholder="Escribe aquí la descripción detallada o usa el dictado por voz con IA arriba..."></textarea>
         </div>
 
-        <div class="cap-row">
+        <!-- Capacitación -->
+        <div class="cap-row" id="boxCapacitacion">
             <strong>INDICAR SI REALIZÓ LA CAPACITACIÓN:</strong>
             <span style="margin-left:10px;"><input type="checkbox" id="capSi"><label for="capSi">SI</label></span>
             <span style="margin-left:10px;"><input type="checkbox" id="capNo"><label for="capNo">NO</label></span>
         </div>
 
+        <!-- Firmas digitales -->
         <table class="signatures-table">
             <tr>
                 <td>
                     <div class="sig-line">
                         TÉCNICO DE MANTENIMIENTO
-                        <div class="firma-container"><canvas id="firmaTecnico" class="firma-canvas"></canvas></div>
+                        <div class="firma-container">
+                            <canvas id="firmaTecnico" class="firma-canvas"></canvas>
+                        </div>
                         <div class="firma-botones">
                             <button class="btn btn-sm btn-primary" onclick="limpiarFirma('firmaTecnico')">Limpiar</button>
                         </div>
@@ -427,7 +1263,9 @@
                 <td>
                     <div class="sig-line">
                         JEFE MÁQUINA
-                        <div class="firma-container"><canvas id="firmaJefe" class="firma-canvas"></canvas></div>
+                        <div class="firma-container">
+                            <canvas id="firmaJefe" class="firma-canvas"></canvas>
+                        </div>
                         <div class="firma-botones">
                             <button class="btn btn-sm btn-primary" onclick="limpiarFirma('firmaJefe')">Limpiar</button>
                         </div>
@@ -436,35 +1274,38 @@
             </tr>
         </table>
 
+        <!-- Oculto: modo edición -->
         <input type="hidden" id="editKey" value="">
     </div>
 
+    <!-- Barra de acciones -->
     <div class="action-bar-wrapper">
         <div class="btn-group">
-            <button class="btn btn-ia" onclick="abrirModalIA()">🤖 ASISTENTE IA</button>
             <button class="btn btn-success" id="btnGuardar" onclick="guardarDatos()">💾 GUARDAR</button>
             <button class="btn btn-info" onclick="cargarUltimosRegistros()">📋 VER REGISTROS</button>
             <button class="btn btn-primary" onclick="mostrarKPIs()">📈 VER KPIS</button>
-            <button class="btn btn-warning" onclick="exportarExcel()">📊 EXCEL</button>
-            <button class="btn btn-primary" onclick="exportarPDF()">📄 PDF</button>
-            <button class="btn btn-secondary" onclick="probarConexion()" style="background:#6c757d;color:white;">🔌 PROBAR CONEXIÓN</button>
+            <button class="btn btn-warning" onclick="exportarExcel()">📊 EXCEL + IA</button>
         </div>
         <div class="btn-group">
             <button class="btn btn-danger" onclick="limpiarFormulario()">🗑️ LIMPIAR</button>
         </div>
     </div>
 
-    <div id="seccionKPIs" style="width: 100%; max-width: 1000px; margin-bottom: 8px; border: 2px solid #2c3e50; background-color: #fff; padding: 10px; display: none;">
+    <!-- Dashboard de Estadísticas y KPIs -->
+    <div id="seccionKPIs" style="width: 100%; max-width: 1000px; margin-bottom: 8px; border: 2px solid #2c3e50; background-color: #fff; padding: 10px; display: none; border-radius: 4px;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2c3e50; padding-bottom: 6px; margin-bottom: 10px;">
             <h3 style="margin: 0; color: #2c3e50;">📊 Indicadores de Mantenimiento (KPIs)</h3>
             <button class="btn btn-danger btn-sm" onclick="cerrarKPIs()">✕ Cerrar</button>
         </div>
+
         <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
             <label for="kpiFiltroMaquina"><strong>Filtrar Máquina:</strong></label>
             <select id="kpiFiltroMaquina" onchange="calcularKPIs()" style="padding: 4px; font-size: 8.5pt;">
                 <option value="TODAS">-- Todas las Máquinas --</option>
             </select>
         </div>
+
+        <!-- Tarjetas numéricas -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px;">
             <div style="background: #eef2f5; border-left: 4px solid #2980b9; padding: 10px; border-radius: 4px;">
                 <span style="font-size: 8pt; color: #555; font-weight: bold;">TOTAL SOLICITUDES</span>
@@ -485,6 +1326,8 @@
                 <div id="kpiTiempoParada" style="font-size: 16pt; font-weight: bold; color: #d68910;">0 min</div>
             </div>
         </div>
+
+        <!-- Contenedor de gráficos -->
         <div id="graficosContainer" class="graficos-container">
             <div class="grafico-wrapper">
                 <h4>📊 Solicitudes por Máquina</h4>
@@ -495,9 +1338,23 @@
                 <canvas id="chartEstados"></canvas>
             </div>
         </div>
-        <div id="mensajeSinDatos" style="display:none; text-align:center; padding:10px; color:#888;">No hay datos para mostrar.</div>
+        <div id="mensajeSinDatos" style="display:none; text-align:center; padding:10px; color:#888;">
+            No hay datos para mostrar.
+        </div>
+
+        <!-- Análisis Inteligente IA de KPIs -->
+        <div id="analisisIA" style="margin-top: 15px; background: linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%); border: 2px solid #3b82f6; border-radius: 8px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(59,130,246,0.10);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                <h4 style="margin: 0; color: #1e40af; font-size: 10pt;">🤖 Análisis Inteligente de KPIs</h4>
+                <button class="btn btn-sm btn-info" onclick="generarAnalisisIA()">🔄 Regenerar Análisis</button>
+            </div>
+            <div id="contenidoAnalisisIA" style="font-size: 8.5pt; line-height: 1.55; color: #1e293b;">
+                <em style="color:#64748b;">El análisis se generará automáticamente al abrir los KPIs o cambiar el filtro...</em>
+            </div>
+        </div>
     </div>
 
+    <!-- Lista de registros -->
     <div id="listaRegistros">
         <h3>📋 Todos los registros guardados</h3>
         <div class="filtros-busqueda">
@@ -515,6 +1372,7 @@
         <div id="contenidoRegistros"></div>
     </div>
 
+    <!-- Detalle de registro -->
     <div id="detalleRegistro">
         <div class="cerrar-detalle">
             <button class="btn btn-danger btn-sm" onclick="cerrarDetalle()">✕ CERRAR</button>
@@ -524,44 +1382,10 @@
     </div>
 
     <script>
-        // ============ SERVICE WORKER ============
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-                const CACHE_NAME = 'bolpar-mantenimiento-v5';
-                const ASSETS = [
-                    './',
-                    'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
-                    'https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js',
-                    'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-                    'https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js',
-                    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
-                ];
-                self.addEventListener('install', (e) => {
-                    e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
-                    self.skipWaiting();
-                });
-                self.addEventListener('activate', (e) => {
-                    e.waitUntil(caches.keys().then((keys) => Promise.all(keys.map((k) => { if (k !== CACHE_NAME) return caches.delete(k); }))));
-                    self.clients.claim();
-                });
-                self.addEventListener('fetch', (e) => {
-                    if (e.request.url.includes('firebaseio.com')) return;
-                    e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
-                });
-            `;
-            const blobSW = new Blob([swCode], { type: 'text/javascript' });
-            const swURL = URL.createObjectURL(blobSW);
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register(swURL)
-                    .then(() => console.log('Service Worker activo'))
-                    .catch(err => console.error('Error con Service Worker:', err));
-            });
-        }
-
-        // ============ FIREBASE ============
-        const firebaseConfig = { databaseURL: "https://solicitud-mantenimiento-bolpar-default-rtdb.firebaseio.com" };
+        // --- CONFIGURACIÓN DE FIREBASE ---
+        const firebaseConfig = {
+            databaseURL: "https://solicitud-mantenimiento-bolpar-default-rtdb.firebaseio.com"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const solicitudesRef = db.ref('solicitudes_mantenimiento');
@@ -569,7 +1393,7 @@
         const maquinasRef = db.ref('maquinas');
         const jefesRef = db.ref('jefes');
 
-        // ============ ESTADO GLOBAL ============
+        // --- VARIABLES GLOBALES ---
         let listaRegistrosCache = [];
         let detalleKeyActual = null;
         let signaturePadTecnico, signaturePadJefe;
@@ -577,70 +1401,635 @@
         let chartMaquinas = null;
         let chartEstados = null;
 
-        // ============ ESTADO ASISTENTE IA ============
-        let recognitionIA = null;
-        let escuchandoIA = false;
-        let datosPrevisualizadosIA = null;
-        let textoBaseIA = ''; // Para control anti-eco
-        const TECNICOS_LISTA = ['Michael Pintos', 'Nicolás Morel'];
+        // Variables de Voz e IA
+        let recognition = null;
+        let escuchandoVoz = false;
+        let textoAcumuladoVoz = '';
 
-        // ============ CONEXIÓN ============
-        function probarConexion() {
-            mostrarToast('🔌 Probando conexión a Firebase...', 'info');
-            solicitudesRef.once('value').then(snapshot => {
-                const data = snapshot.val();
-                if (data) mostrarToast(`✅ Conexión exitosa. ${Object.keys(data).length} registros encontrados.`, 'success');
-                else mostrarToast('✅ Conexión exitosa. No hay registros aún.', 'info');
-            }).catch(err => {
-                mostrarToast(`❌ Error de conexión: ${err.message}`, 'error');
-                console.error('Error de Firebase:', err);
+        // --- MODALES DE DIÁLOGO PERSONALIZADOS ---
+        function abrirDialogoCustom({ titulo, mensaje, conInput = false, placeholder = '' }) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('modalDialogoCustom');
+                const elTitulo = document.getElementById('dialogoTitulo');
+                const elMensaje = document.getElementById('dialogoMensaje');
+                const elInput = document.getElementById('dialogoInput');
+                const btnAceptar = document.getElementById('btnDialogoAceptar');
+                const btnCancelar = document.getElementById('btnDialogoCancelar');
+
+                elTitulo.textContent = titulo || 'Confirmación';
+                elMensaje.textContent = mensaje || '';
+                if (conInput) {
+                    elInput.style.display = 'block';
+                    elInput.value = '';
+                    elInput.placeholder = placeholder;
+                    setTimeout(() => elInput.focus(), 50);
+                } else {
+                    elInput.style.display = 'none';
+                }
+
+                overlay.style.display = 'flex';
+
+                const limpiarEventos = () => {
+                    overlay.style.display = 'none';
+                    btnAceptar.onclick = null;
+                    btnCancelar.onclick = null;
+                };
+
+                btnAceptar.onclick = () => {
+                    const val = conInput ? elInput.value : true;
+                    limpiarEventos();
+                    resolve(val);
+                };
+                btnCancelar.onclick = () => {
+                    limpiarEventos();
+                    resolve(conInput ? null : false);
+                };
             });
         }
 
-        // ============ OFFLINE ============
-        function guardarOffline(datos) {
-            let cola = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
-            cola.push(datos);
-            localStorage.setItem('solicitudes_offline', JSON.stringify(cola));
-            mostrarToast('📶 Guardado en modo OFFLINE.', 'info');
-        }
-        async function sincronizarDatosOffline() {
-            const cola = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
-            if (cola.length === 0) return;
-            mostrarToast(`🔄 Sincronizando ${cola.length} registros pendientes...`, 'info');
-            const noSincronizados = [];
-            for (let item of cola) {
-                try { await solicitudesRef.push(item); }
-                catch (err) { noSincronizados.push(item); }
+        // --- RECONOCIMIENTO DE VOZ (WEB SPEECH API) ---
+        function inicializarReconocimientoVoz() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                return null;
             }
+            const rec = new SpeechRecognition();
+            rec.lang = 'es-ES';
+            rec.continuous = true;
+            rec.interimResults = true;
+
+            rec.onstart = () => {
+                escuchandoVoz = true;
+                actualizarBotonMic(true);
+                mostrarToast('🎙️ Escuchando... Habla ahora para dictar los datos.', 'info');
+            };
+
+            rec.onresult = (event) => {
+                let interino = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        textoAcumuladoVoz += event.results[i][0].transcript + ' ';
+                    } else {
+                        interino += event.results[i][0].transcript;
+                    }
+                }
+                const textarea = document.getElementById('textoComandoVoz');
+                textarea.value = (textoAcumuladoVoz + interino).trim();
+            };
+
+            rec.onerror = (event) => {
+                console.warn('Aviso de reconocimiento de voz:', event.error);
+                if (event.error === 'not-allowed') {
+                    mostrarToast('⚠️ Permiso de micrófono denegado. Puedes escribir el comando manualmente.', 'error');
+                }
+                escuchandoVoz = false;
+                actualizarBotonMic(false);
+            };
+
+            rec.onend = () => {
+                escuchandoVoz = false;
+                actualizarBotonMic(false);
+            };
+
+            return rec;
+        }
+
+        function toggleReconocimientoVoz() {
+            if (!recognition) {
+                recognition = inicializarReconocimientoVoz();
+            }
+            if (!recognition) {
+                mostrarToast('⚠️ Tu navegador no soporta dictado por voz directo. Escribe el texto en el cuadro y usa Analizar con IA.', 'error');
+                document.getElementById('textoComandoVoz').focus();
+                return;
+            }
+
+            if (escuchandoVoz) {
+                recognition.stop();
+                escuchandoVoz = false;
+                actualizarBotonMic(false);
+                mostrarToast('⏹️ Dictado finalizado. Pulsa "Analizar y Previsualizar".', 'info');
+            } else {
+                const actual = document.getElementById('textoComandoVoz').value.trim();
+                textoAcumuladoVoz = actual ? actual + ' ' : '';
+                try {
+                    recognition.start();
+                } catch (e) {
+                    recognition.stop();
+                }
+            }
+        }
+
+        function actualizarBotonMic(activo) {
+            const btn = document.getElementById('btnMic');
+            const icono = document.getElementById('iconoMic');
+            const texto = document.getElementById('textoMic');
+            if (activo) {
+                btn.classList.add('recording');
+                icono.textContent = '⏹️';
+                texto.textContent = 'Detener Dictado';
+            } else {
+                btn.classList.remove('recording');
+                icono.textContent = '🎙️';
+                texto.textContent = 'Iniciar Dictado por Voz';
+            }
+        }
+
+        function limpiarTextoVoz() {
+            textoAcumuladoVoz = '';
+            document.getElementById('textoComandoVoz').value = '';
+            mostrarToast('🧹 Texto de comando limpiado.', 'info');
+        }
+
+        function cargarEjemploVoz(num) {
+            const textarea = document.getElementById('textoComandoVoz');
+            if (num === 1) {
+                textarea.value = "En la máquina Impresora Flexotech 6C hubo un problema eléctrico y de ajuste operacional por mal ajuste. El técnico Nicolás Morel con el jefe Julio revisaron el sensor de registro, calibraron el servomotor principal y limpiaron contactos. Empezó a las 10:15 y terminó a las 11:05. Sí se realizó la capacitación al operador.";
+            } else {
+                textarea.value = "Solicitud para la Coteadora con el jefe Ángel y el técnico Michael Pintos. Falla mecánica por desgaste y falta de lubricación. Se reemplazó cadena de transmisión secundaria y se engrasaron los rodamientos del cabezal. Hora de solicitud 14:00, finalizó a las 15:20. No se realizó capacitación.";
+            }
+            textoAcumuladoVoz = textarea.value + ' ';
+            mostrarToast('✨ Ejemplo cargado. Pulsa "Analizar y Previsualizar".', 'info');
+        }
+
+        // --- PROCESAMIENTO CON IA (GEMINI API + FALLBACK LOCAL) ---
+        async function llamarGeminiConReintentos(payload, maxRetries = 3) {
+            const apiKey = "";   // ← pega aquí tu API key si vas a usar Gemini
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            let delay = 1000;
+
+            for (let intento = 0; intento < maxRetries; intento++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (err) {
+                    if (intento === maxRetries - 1) throw err;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        async function procesarComandoConIA() {
+            if (escuchandoVoz && recognition) {
+                recognition.stop();
+                escuchandoVoz = false;
+                actualizarBotonMic(false);
+            }
+
+            const comando = document.getElementById('textoComandoVoz').value.trim();
+            if (!comando) {
+                mostrarToast('⚠️ Primero dicta o escribe las instrucciones de mantenimiento.', 'error');
+                document.getElementById('textoComandoVoz').focus();
+                return;
+            }
+
+            const btn = document.getElementById('btnProcesarIA');
+            btn.disabled = true;
+            btn.textContent = '⏳ Analizando con IA...';
+
+            const listaMaquinas = [...document.getElementById('maquina').options].map(o => o.value).filter(Boolean);
+            const listaJefes = [...document.getElementById('jefeMaquina').options].map(o => o.value).filter(Boolean);
+            const listaTecnicos = ["Michael Pintos", "Nicolás Morel"];
+            const fechaHoy = document.getElementById('fechaSolicitud').value;
+
+            let datosExtraidos = null;
+
+            try {
+                const systemPrompt = `Eres un asistente experto en mantenimiento industrial para la planta BOLPAR S.A.
+Analiza el texto dictado por el usuario y extrae los campos para completar la Solicitud de Mantenimiento Correctivo.
+Reglas importantes:
+1. Opciones de máquinas conocidas: ${JSON.stringify(listaMaquinas)}. Si el usuario nombra una máquina parecida (ej. "flexo" -> "Impresora Flexotech 6C", "fondera uno" -> "Fondera 1", "linea tres" -> "Linea 3"), devuelve el nombre exacto de la lista. Si menciona una máquina nueva, devuelve su nombre capitalizado.
+2. Opciones de técnicos conocidos: ${JSON.stringify(listaTecnicos)}. Si menciona solo "Michael" o "Pintos" usa "Michael Pintos". Si menciona "Nicolás" o "Morel" usa "Nicolás Morel".
+3. Opciones de jefes conocidos: ${JSON.stringify(listaJefes)}. Haz coincidir con el nombre más cercano de la lista.
+4. Horas en formato 24h "HH:MM". Si no se menciona un campo, devuelve cadena vacía "" o false.
+5. En "descripcion", redacta de forma profesional, clara y técnica los trabajos realizados mencionados en el dictado.
+6. Fecha actual de referencia: ${fechaHoy}.`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: comando }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                maquina: { type: "STRING" },
+                                tecnico: { type: "STRING" },
+                                jefe: { type: "STRING" },
+                                fecha: { type: "STRING", description: "YYYY-MM-DD si se especifica" },
+                                hora_solicitud: { type: "STRING", description: "HH:MM" },
+                                hora_llegada: { type: "STRING", description: "HH:MM" },
+                                hora_finalizacion: { type: "STRING", description: "HH:MM" },
+                                estado: { type: "STRING", description: "Finalizada, Pendiente, En curso, o Cancelada" },
+                                mecanico: { type: "BOOLEAN" },
+                                electrico: { type: "BOOLEAN" },
+                                hidraulico: { type: "BOOLEAN" },
+                                instalaciones: { type: "BOOLEAN" },
+                                ajuste: { type: "BOOLEAN" },
+                                otro_tipo: { type: "STRING", description: "Software, Neumático, Estructural, Ruido anormal o vacío" },
+                                desgaste: { type: "BOOLEAN" },
+                                mal_ajuste: { type: "BOOLEAN" },
+                                otra_causa: { type: "STRING", description: "Falta de lubricación, Sobrecarga, Fallo eléctrico, Error de operador o vacío" },
+                                capacitacion: { type: "STRING", description: "SI, NO, o vacío" },
+                                descripcion: { type: "STRING" }
+                            }
+                        }
+                    }
+                };
+
+                const result = await llamarGeminiConReintentos(payload);
+                const textJson = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (textJson) {
+                    datosExtraidos = JSON.parse(textJson);
+                }
+            } catch (error) {
+                console.warn('Usando motor local de respaldo para extracción:', error);
+                datosExtraidos = analizarComandoLocalmente(comando, listaMaquinas, listaJefes);
+            }
+
+            if (!datosExtraidos) {
+                datosExtraidos = analizarComandoLocalmente(comando, listaMaquinas, listaJefes);
+            }
+
+            mostrarModalPrevisualizacion(comando, datosExtraidos);
+            btn.disabled = false;
+            btn.textContent = '🧠 Analizar y Previsualizar';
+        }
+
+        // Analizador semántico local de respaldo (por si no hay internet o falla la red)
+        function analizarComandoLocalmente(texto, listaMaquinas, listaJefes) {
+            const t = texto.toLowerCase();
+            const res = {
+                maquina: '', tecnico: '', jefe: '', fecha: '',
+                hora_solicitud: '', hora_llegada: '', hora_finalizacion: '',
+                estado: 'Finalizada',
+                mecanico: /mec[aá]nic/.test(t),
+                electrico: /el[eé]ctric/.test(t),
+                hidraulico: /hidr[aá]ulic/.test(t),
+                instalaciones: /instalaci[oó]n/.test(t),
+                ajuste: /ajuste operacional|ajuste de m[aá]quina/.test(t),
+                otro_tipo: '',
+                desgaste: /desgaste/.test(t),
+                mal_ajuste: /mal ajuste|desajust/.test(t),
+                otra_causa: '',
+                capacitacion: '',
+                descripcion: texto.trim()
+            };
+
+            // Buscar máquina
+            for (const m of listaMaquinas) {
+                if (t.includes(m.toLowerCase())) { res.maquina = m; break; }
+            }
+            if (!res.maquina) {
+                if (t.includes('flexo')) res.maquina = 'Impresora Flexotech 6C';
+                else if (t.includes('fondera uno') || t.includes('fondera 1')) res.maquina = 'Fondera 1';
+                else if (t.includes('fondera dos') || t.includes('fondera 2')) res.maquina = 'Fondera 2';
+                else if (t.includes('tubera uno') || t.includes('tubera 1')) res.maquina = 'Tubera 1';
+                else if (t.includes('tubera dos') || t.includes('tubera 2')) res.maquina = 'Tubera 2';
+                else if (t.includes('linea tres') || t.includes('línea 3') || t.includes('linea 3')) res.maquina = 'Linea 3';
+            }
+
+            // Buscar técnico
+            if (t.includes('michael') || t.includes('pintos')) res.tecnico = 'Michael Pintos';
+            else if (t.includes('nicol') || t.includes('morel')) res.tecnico = 'Nicolás Morel';
+
+            // Buscar jefe
+            for (const j of listaJefes) {
+                const jSinAcento = j.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const tSinAcento = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (tSinAcento.includes(jSinAcento)) { res.jefe = j; break; }
+            }
+
+            // Horas (ej: 08:30, 14:15)
+            const horasMatch = texto.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g);
+            if (horasMatch && horasMatch.length >= 1) {
+                const padHora = (h) => h.split(':').map(p => p.padStart(2, '0')).join(':');
+                res.hora_solicitud = padHora(horasMatch[0]);
+                if (horasMatch.length >= 2) {
+                    res.hora_finalizacion = padHora(horasMatch[horasMatch.length - 1]);
+                }
+            }
+
+            // Otros tipos y causas
+            if (/software/.test(t)) res.otro_tipo = 'Software';
+            else if (/neum[aá]tic/.test(t)) res.otro_tipo = 'Neumático';
+            else if (/estructural/.test(t)) res.otro_tipo = 'Estructural';
+            else if (/ruido/.test(t)) res.otro_tipo = 'Ruido anormal';
+
+            if (/lubricaci[oó]n|falta de grasa/.test(t)) res.otra_causa = 'Falta de lubricación';
+            else if (/sobrecarga/.test(t)) res.otra_causa = 'Sobrecarga';
+            else if (/fallo el[eé]ctrico/.test(t)) res.otra_causa = 'Fallo eléctrico';
+            else if (/error de operador/.test(t)) res.otra_causa = 'Error de operador';
+
+            // Capacitación
+            if (/no se realiz[oó] capacitaci[oó]n|sin capacitaci[oó]n|capacitaci[oó]n no/.test(t)) {
+                res.capacitacion = 'NO';
+            } else if (/s[ií] se realiz[oó] la capacitaci[oó]n|s[ií] se realiz[oó] capacitaci[oó]n|con capacitaci[oó]n|se capacit[oó]/.test(t)) {
+                res.capacitacion = 'SI';
+            }
+
+            return res;
+        }
+
+        // --- FUNCIONES DEL MODAL DE PREVISUALIZACIÓN IA ---
+        function sincronizarSelectoresPrevisualizacion() {
+            const selMaqOrig = document.getElementById('maquina');
+            const selJefeOrig = document.getElementById('jefeMaquina');
+            const selMaqPrev = document.getElementById('prevMaquina');
+            const selJefePrev = document.getElementById('prevJefe');
+
+            selMaqPrev.innerHTML = selMaqOrig.innerHTML;
+            selJefePrev.innerHTML = selJefeOrig.innerHTML;
+        }
+
+        function marcarCampoDetectado(idContenedor, detectado) {
+            const el = document.getElementById(idContenedor);
+            if (!el) return;
+            if (detectado) el.classList.add('detected');
+            else el.classList.remove('detected');
+        }
+
+        function mostrarModalPrevisualizacion(comandoOriginal, iaData) {
+            sincronizarSelectoresPrevisualizacion();
+            document.getElementById('prevTranscripcionTexto').textContent = comandoOriginal;
+
+            let maquinaVal = iaData.maquina || document.getElementById('maquina').value;
+            let tecnicoVal = iaData.tecnico || '';
+            let jefeVal = iaData.jefe || '';
+
+            if (maquinaVal && datosMaquinas[maquinaVal]) {
+                if (!tecnicoVal) tecnicoVal = datosMaquinas[maquinaVal].tecnico;
+                if (!jefeVal) jefeVal = datosMaquinas[maquinaVal].jefe;
+            }
+
+            if (maquinaVal) {
+                const selM = document.getElementById('prevMaquina');
+                if (![...selM.options].some(o => o.value === maquinaVal)) {
+                    const opt = document.createElement('option');
+                    opt.value = maquinaVal;
+                    opt.textContent = maquinaVal + ' (Nueva)';
+                    selM.appendChild(opt);
+                }
+                selM.value = maquinaVal;
+            }
+            if (jefeVal) {
+                const selJ = document.getElementById('prevJefe');
+                if (![...selJ.options].some(o => o.value === jefeVal)) {
+                    const opt = document.createElement('option');
+                    opt.value = jefeVal;
+                    opt.textContent = jefeVal + ' (Nuevo)';
+                    selJ.appendChild(opt);
+                }
+                selJ.value = jefeVal;
+            }
+
+            document.getElementById('prevTecnico').value = tecnicoVal || document.getElementById('tecnico').value;
+            document.getElementById('prevEstado').value = iaData.estado || document.getElementById('estado').value || 'Finalizada';
+            document.getElementById('prevFecha').value = iaData.fecha || document.getElementById('fechaSolicitud').value;
+
+            const horaSol = iaData.hora_solicitud || document.getElementById('horaSolicitud').value;
+            document.getElementById('prevHoraSolicitud').value = horaSol;
+
+            const horaLleg = iaData.hora_llegada || (iaData.hora_solicitud ? sumarMinutos(iaData.hora_solicitud, 2) : document.getElementById('horaLlegada').value);
+            document.getElementById('prevHoraLlegada').value = horaLleg;
+
+            document.getElementById('prevHoraFinalizacion').value = iaData.hora_finalizacion || document.getElementById('horaFinalizacion').value;
+
+            // Checkboxes Tipo de Problema
+            document.getElementById('prevMecanico').checked = !!iaData.mecanico;
+            document.getElementById('prevElectrico').checked = !!iaData.electrico;
+            document.getElementById('prevHidraulico').checked = !!iaData.hidraulico;
+            document.getElementById('prevInstalaciones').checked = !!iaData.instalaciones;
+            document.getElementById('prevAjuste').checked = !!iaData.ajuste;
+            document.getElementById('prevOtroTipoCheck').checked = !!iaData.otro_tipo;
+            document.getElementById('prevOtroTipoSelect').value = iaData.otro_tipo || '';
+
+            // Checkboxes Causa
+            document.getElementById('prevDesgaste').checked = !!iaData.desgaste;
+            document.getElementById('prevMalAjuste').checked = !!iaData.mal_ajuste;
+            document.getElementById('prevOtraCausaCheck').checked = !!iaData.otra_causa;
+            document.getElementById('prevOtraCausaSelect').value = iaData.otra_causa || '';
+
+            // Capacitación
+            if (iaData.capacitacion === 'SI') {
+                document.getElementById('prevCapSi').checked = true;
+            } else if (iaData.capacitacion === 'NO') {
+                document.getElementById('prevCapNo').checked = true;
+            } else {
+                document.getElementById('prevCapNinguno').checked = true;
+            }
+
+            // Descripción
+            document.getElementById('prevDescripcion').value = iaData.descripcion || comandoOriginal;
+
+            // Resaltar visualmente qué campos detectó la IA
+            marcarCampoDetectado('fieldPrevMaquina', !!iaData.maquina);
+            marcarCampoDetectado('fieldPrevTecnico', !!(iaData.tecnico || (iaData.maquina && datosMaquinas[iaData.maquina])));
+            marcarCampoDetectado('fieldPrevJefe', !!(iaData.jefe || (iaData.maquina && datosMaquinas[iaData.maquina])));
+            marcarCampoDetectado('fieldPrevEstado', !!iaData.estado);
+            marcarCampoDetectado('fieldPrevFecha', !!iaData.fecha);
+            marcarCampoDetectado('fieldPrevHoraSol', !!iaData.hora_solicitud);
+            marcarCampoDetectado('fieldPrevHoraLleg', !!(iaData.hora_llegada || iaData.hora_solicitud));
+            marcarCampoDetectado('fieldPrevHoraFin', !!iaData.hora_finalizacion);
+
+            const algunTipo = iaData.mecanico || iaData.electrico || iaData.hidraulico || iaData.instalaciones || iaData.ajuste || iaData.otro_tipo;
+            marcarCampoDetectado('fieldPrevTipoProblema', !!algunTipo);
+
+            const algunaCausa = iaData.desgaste || iaData.mal_ajuste || iaData.otra_causa;
+            marcarCampoDetectado('fieldPrevCausa', !!algunaCausa);
+
+            marcarCampoDetectado('fieldPrevCapacitacion', !!iaData.capacitacion);
+            marcarCampoDetectado('fieldPrevDescripcion', !!iaData.descripcion);
+
+            document.getElementById('modalPrevisualizacionIA').style.display = 'flex';
+        }
+
+        function alCambiarMaquinaPreview() {
+            const maq = document.getElementById('prevMaquina').value;
+            if (maq && datosMaquinas[maq]) {
+                document.getElementById('prevTecnico').value = datosMaquinas[maq].tecnico;
+                document.getElementById('prevJefe').value = datosMaquinas[maq].jefe;
+            }
+        }
+
+        function recalcularPreviewTiempos() {
+            const hSol = document.getElementById('prevHoraSolicitud').value;
+            const hLleg = document.getElementById('prevHoraLlegada');
+            if (hSol && !hLleg.value) {
+                hLleg.value = sumarMinutos(hSol, 2);
+            }
+        }
+
+        function cerrarModalPrevisualizacion() {
+            document.getElementById('modalPrevisualizacionIA').style.display = 'none';
+        }
+
+        function animarCampoActualizado(idElemento) {
+            const el = document.getElementById(idElemento);
+            if (!el) return;
+            el.classList.remove('campo-actualizado-ia');
+            void el.offsetWidth;
+            el.classList.add('campo-actualizado-ia');
+        }
+
+        function aplicarDatosPrevisualizados() {
+            const maq = document.getElementById('prevMaquina').value;
+            const tec = document.getElementById('prevTecnico').value;
+            const jefe = document.getElementById('prevJefe').value;
+            const est = document.getElementById('prevEstado').value;
+            const fecha = document.getElementById('prevFecha').value;
+            const hSol = document.getElementById('prevHoraSolicitud').value;
+            const hLleg = document.getElementById('prevHoraLlegada').value;
+            const hFin = document.getElementById('prevHoraFinalizacion').value;
+            const desc = document.getElementById('prevDescripcion').value;
+
+            if (maq) {
+                asegurarOpcion('maquina', maq);
+                document.getElementById('maquina').value = maq;
+                document.getElementById('errorMaquina').style.display = 'none';
+                document.getElementById('maquina').classList.remove('campo-requerido');
+                animarCampoActualizado('maquina');
+            }
+            if (tec) {
+                document.getElementById('tecnico').value = tec;
+                document.getElementById('errorTecnico').style.display = 'none';
+                document.getElementById('tecnico').classList.remove('campo-requerido');
+                animarCampoActualizado('tecnico');
+            }
+            if (jefe) {
+                asegurarOpcion('jefeMaquina', jefe);
+                document.getElementById('jefeMaquina').value = jefe;
+                document.getElementById('errorJefe').style.display = 'none';
+                document.getElementById('jefeMaquina').classList.remove('campo-requerido');
+                animarCampoActualizado('jefeMaquina');
+            }
+            if (est) {
+                document.getElementById('estado').value = est;
+                animarCampoActualizado('estado');
+            }
+            if (fecha) {
+                document.getElementById('fechaSolicitud').value = fecha;
+                animarCampoActualizado('fechaSolicitud');
+            }
+            if (hSol) {
+                document.getElementById('horaSolicitud').value = hSol;
+                animarCampoActualizado('horaSolicitud');
+            }
+            if (hLleg) {
+                document.getElementById('horaLlegada').value = hLleg;
+                animarCampoActualizado('horaLlegada');
+            }
+            if (hFin) {
+                document.getElementById('horaFinalizacion').value = hFin;
+                animarCampoActualizado('horaFinalizacion');
+            }
+            calcularDuracion();
+            animarCampoActualizado('duracion');
+
+            // Tipo de problema
+            document.getElementById('mecanico').checked = document.getElementById('prevMecanico').checked;
+            document.getElementById('electrico').checked = document.getElementById('prevElectrico').checked;
+            document.getElementById('hidraulico').checked = document.getElementById('prevHidraulico').checked;
+            document.getElementById('instalaciones').checked = document.getElementById('prevInstalaciones').checked;
+            document.getElementById('ajuste').checked = document.getElementById('prevAjuste').checked;
+            document.getElementById('otroTipoCheck').checked = document.getElementById('prevOtroTipoCheck').checked;
+            document.getElementById('otroTipoSelect').value = document.getElementById('prevOtroTipoSelect').value;
+            animarCampoActualizado('boxTipoProblema');
+
+            // Causa
+            document.getElementById('desgaste').checked = document.getElementById('prevDesgaste').checked;
+            document.getElementById('malAjuste').checked = document.getElementById('prevMalAjuste').checked;
+            document.getElementById('otraCausaCheck').checked = document.getElementById('prevOtraCausaCheck').checked;
+            document.getElementById('otraCausaSelect').value = document.getElementById('prevOtraCausaSelect').value;
+            animarCampoActualizado('boxCausaProblema');
+
+            // Capacitación
+            const capSi = document.getElementById('prevCapSi').checked;
+            const capNo = document.getElementById('prevCapNo').checked;
+            document.getElementById('capSi').checked = capSi;
+            document.getElementById('capNo').checked = capNo;
+            animarCampoActualizado('boxCapacitacion');
+
+            // Descripción
+            if (desc) {
+                document.getElementById('descripcion').value = desc;
+                animarCampoActualizado('descripcion');
+            }
+
+            cerrarModalPrevisualizacion();
+            mostrarToast('✅ Datos verificados y aplicados al formulario con éxito.', 'success');
+        }
+
+        // --- MODO OFFLINE Y SINCRONIZACIÓN ---
+        function guardarOffline(datos) {
+            let colaOffline = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
+            colaOffline.push(datos);
+            localStorage.setItem('solicitudes_offline', JSON.stringify(colaOffline));
+            mostrarToast('📶 Guardado en modo OFFLINE. Se sincronizará al conectar.', 'info');
+        }
+
+        async function sincronizarDatosOffline() {
+            const colaOffline = JSON.parse(localStorage.getItem('solicitudes_offline') || '[]');
+            if (colaOffline.length === 0) return;
+
+            mostrarToast(`🔄 Sincronizando ${colaOffline.length} registros pendientes...`, 'info');
+            const noSincronizados = [];
+
+            for (let item of colaOffline) {
+                try {
+                    await solicitudesRef.push(item);
+                } catch (err) {
+                    console.error("Error sincronización:", err);
+                    noSincronizados.push(item);
+                }
+            }
+
             if (noSincronizados.length === 0) {
                 localStorage.removeItem('solicitudes_offline');
-                mostrarToast('✅ Registros sincronizados.', 'success');
-                if (document.getElementById('listaRegistros').style.display === 'block') cargarUltimosRegistros();
+                mostrarToast('✅ Registros sincronizados con éxito.', 'success');
+                if (document.getElementById('listaRegistros').style.display === 'block') {
+                    cargarUltimosRegistros();
+                }
             } else {
                 localStorage.setItem('solicitudes_offline', JSON.stringify(noSincronizados));
                 mostrarToast('⚠️ Algunos registros no se pudieron sincronizar.', 'error');
             }
         }
-        function guardarOpcionesOffline(tipo, lista) { localStorage.setItem(`opciones_${tipo}`, JSON.stringify(lista)); }
+
+        function guardarOpcionesOffline(tipo, lista) {
+            localStorage.setItem(`opciones_${tipo}`, JSON.stringify(lista));
+        }
+
         function obtenerOpcionesOffline(tipo) {
             const data = localStorage.getItem(`opciones_${tipo}`);
             return data ? JSON.parse(data) : null;
         }
 
-        // ============ OPCIONES ============
+        // --- CARGA Y GUARDADO DE OPCIONES ---
         const valoresDefault = {
             maquinas: ["Coteadora", "Impresora Flexotech 6C", "Fondera 1", "Fondera 2", "Linea 3", "Tubera 1", "Tubera 2", "Cortadora", "Dobladora", "Soldadora", "Troqueladora", "Laminadora"],
-            jefes: ["Ángel", "Julio", "Guillermo", "Carlos Barreto", "De los Santos", "Claudio", "Cristian", "Andy", "Alexis", "Roberto", "Mario", "Luis", "Pedro", "Hugo", "Fernando", "Ricardo", "Fabricio"]
+            jefes: ["Ángel", "Julio", "Guillermo", "Carlos Barreto", "De los Santos", "Claudio", "Cristian", "Andy", "Alexis", "Roberto", "Mario", "Luis", "Pedro", "Hugo", "Fernando", "Ricardo"]
         };
 
         async function cargarOpciones() {
             if (opcionesCargadas) return;
             opcionesCargadas = true;
+
             try {
-                const [maquinasSnap, jefesSnap] = await Promise.all([maquinasRef.once('value'), jefesRef.once('value')]);
+                const [maquinasSnap, jefesSnap] = await Promise.all([
+                    maquinasRef.once('value'),
+                    jefesRef.once('value')
+                ]);
+
                 let maquinas = maquinasSnap.val();
                 let jefes = jefesSnap.val();
+
                 if (!maquinas || !Array.isArray(maquinas) || maquinas.length === 0) {
                     maquinas = valoresDefault.maquinas;
                     await maquinasRef.set(maquinas);
@@ -649,31 +2038,38 @@
                     jefes = valoresDefault.jefes;
                     await jefesRef.set(jefes);
                 }
+
                 actualizarSelectores(maquinas, jefes);
                 actualizarFiltroKPIs(maquinas);
-                mostrarToast('📋 Opciones cargadas.', 'info');
+                mostrarToast('📋 Opciones cargadas desde Firebase.', 'info');
             } catch (error) {
+                console.warn('Error al cargar desde Firebase, usando localStorage o defaults.', error);
                 let maquinas = obtenerOpcionesOffline('maquinas') || valoresDefault.maquinas;
                 let jefes = obtenerOpcionesOffline('jefes') || valoresDefault.jefes;
                 actualizarSelectores(maquinas, jefes);
                 actualizarFiltroKPIs(maquinas);
-                mostrarToast('⚠️ Usando opciones locales.', 'error');
+                mostrarToast('⚠️ Usando opciones locales (offline).', 'error');
             }
         }
 
         function actualizarSelectores(maquinas, jefes) {
             const selectMaquina = document.getElementById('maquina');
             const selectJefe = document.getElementById('jefeMaquina');
+
             selectMaquina.innerHTML = '<option value="">-- Seleccione --</option>';
             selectJefe.innerHTML = '<option value="">-- Seleccione --</option>';
+
             maquinas.forEach(m => {
                 const opt = document.createElement('option');
-                opt.value = m; opt.textContent = m;
+                opt.value = m;
+                opt.textContent = m;
                 selectMaquina.appendChild(opt);
             });
+
             jefes.forEach(j => {
                 const opt = document.createElement('option');
-                opt.value = j; opt.textContent = j;
+                opt.value = j;
+                opt.textContent = j;
                 selectJefe.appendChild(opt);
             });
         }
@@ -685,35 +2081,51 @@
             kpiSelect.appendChild(todas);
             maquinas.forEach(m => {
                 const opt = document.createElement('option');
-                opt.value = m; opt.textContent = m;
+                opt.value = m;
+                opt.textContent = m;
                 kpiSelect.appendChild(opt);
             });
         }
 
-        // ============ MENÚS CONTEXTUALES ============
+        // --- AÑADIR Y ELIMINAR OPCIONES ---
         function toggleMenu(selectId) {
             const menuId = selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina';
             const menu = document.getElementById(menuId);
-            document.querySelectorAll('.menu-contextual').forEach(m => { if (m.id !== menuId) m.classList.remove('mostrar'); });
+            document.querySelectorAll('.menu-contextual').forEach(m => {
+                if (m.id !== menuId) m.classList.remove('mostrar');
+            });
             menu.classList.toggle('mostrar');
         }
+
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.select-wrapper')) {
                 document.querySelectorAll('.menu-contextual').forEach(m => m.classList.remove('mostrar'));
             }
         });
 
-        function agregarOpcion(selectId) {
+        async function agregarOpcion(selectId) {
+            document.getElementById(selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina').classList.remove('mostrar');
             const nombreCampo = selectId === 'maquina' ? 'máquina' : 'jefe';
-            const nuevoValor = prompt(`Ingrese el nombre de la nueva ${nombreCampo}:`);
+            const nuevoValor = await abrirDialogoCustom({
+                titulo: `➕ Añadir ${nombreCampo}`,
+                mensaje: `Ingrese el nombre de la nueva ${nombreCampo}:`,
+                conInput: true,
+                placeholder: `Nombre de ${nombreCampo}...`
+            });
             if (!nuevoValor || nuevoValor.trim() === '') return;
             const valorTrim = nuevoValor.trim();
+
             const select = document.getElementById(selectId);
             for (let opt of select.options) {
-                if (opt.value === valorTrim) { alert(`La ${nombreCampo} "${valorTrim}" ya existe.`); return; }
+                if (opt.value === valorTrim) {
+                    mostrarToast(`⚠️ La opción "${valorTrim}" ya existe.`, 'error');
+                    return;
+                }
             }
+
             const option = document.createElement('option');
-            option.value = valorTrim; option.textContent = valorTrim;
+            option.value = valorTrim;
+            option.textContent = valorTrim;
             select.appendChild(option);
             select.value = valorTrim;
 
@@ -721,69 +2133,115 @@
                 actualizarDatosMaquina();
                 const kpiSelect = document.getElementById('kpiFiltroMaquina');
                 const optKPI = document.createElement('option');
-                optKPI.value = valorTrim; optKPI.textContent = valorTrim;
+                optKPI.value = valorTrim;
+                optKPI.textContent = valorTrim;
                 kpiSelect.appendChild(optKPI);
             }
+
             const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
             ref.transaction((current) => {
                 if (!current || !Array.isArray(current)) current = [];
-                if (!current.includes(valorTrim)) current.push(valorTrim);
+                if (!current.includes(valorTrim)) {
+                    current.push(valorTrim);
+                }
                 return current;
             }).then(() => {
-                mostrarToast(`✅ ${nombreCampo} "${valorTrim}" añadida.`, 'success');
+                mostrarToast(`✅ ${nombreCampo.charAt(0).toUpperCase() + nombreCampo.slice(1)} "${valorTrim}" añadida.`, 'success');
             }).catch(err => {
                 mostrarToast('❌ Error al guardar en Firebase.', 'error');
+                console.error(err);
                 const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
-                if (!lista.includes(valorTrim)) { lista.push(valorTrim); guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista); }
+                if (!lista.includes(valorTrim)) {
+                    lista.push(valorTrim);
+                    guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista);
+                }
             });
-            document.getElementById(selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina').classList.remove('mostrar');
         }
 
-        function eliminarOpcion(selectId) {
+        async function eliminarOpcion(selectId) {
+            document.getElementById(selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina').classList.remove('mostrar');
             const select = document.getElementById(selectId);
             const valorSeleccionado = select.value;
-            if (!valorSeleccionado) { alert('Selecciona una opción para eliminar.'); return; }
-            if (!confirm(`¿Eliminar la opción "${valorSeleccionado}"?`)) return;
-            select.remove(select.selectedIndex);
-            if (select.value === '' && select.options.length > 0) select.selectedIndex = 0;
+            if (!valorSeleccionado) {
+                mostrarToast('⚠️ Selecciona primero una opción para eliminar.', 'error');
+                return;
+            }
+            const confirmado = await abrirDialogoCustom({
+                titulo: '🗑️ Eliminar Opción',
+                mensaje: `¿Seguro que deseas eliminar la opción "${valorSeleccionado}"?`,
+                conInput: false
+            });
+            if (!confirmado) return;
+
+            const index = select.selectedIndex;
+            select.remove(index);
+            if (select.value === '') {
+                if (select.options.length > 0) select.selectedIndex = 0;
+            }
+
             if (selectId === 'maquina') {
                 const kpiSelect = document.getElementById('kpiFiltroMaquina');
                 for (let opt of kpiSelect.options) {
-                    if (opt.value === valorSeleccionado) { kpiSelect.remove(opt.index); break; }
+                    if (opt.value === valorSeleccionado) {
+                        kpiSelect.remove(opt.index);
+                        break;
+                    }
+                }
+                if (document.getElementById('maquina').value === valorSeleccionado) {
+                    document.getElementById('maquina').value = '';
                 }
             }
+
             const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
             ref.transaction((current) => {
                 if (!current || !Array.isArray(current)) return current;
                 const idx = current.indexOf(valorSeleccionado);
-                if (idx !== -1) current.splice(idx, 1);
+                if (idx !== -1) {
+                    current.splice(idx, 1);
+                }
                 return current;
-            }).then(() => mostrarToast(`🗑️ Opción eliminada.`, 'info'))
-              .catch(err => {
-                  mostrarToast('❌ Error al eliminar.', 'error');
-                  const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
-                  const idx = lista.indexOf(valorSeleccionado);
-                  if (idx !== -1) { lista.splice(idx, 1); guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista); }
-              });
-            document.getElementById(selectId === 'maquina' ? 'menuMaquina' : 'menuJefeMaquina').classList.remove('mostrar');
+            }).then(() => {
+                mostrarToast(`🗑️ Opción "${valorSeleccionado}" eliminada.`, 'info');
+            }).catch(err => {
+                mostrarToast('❌ Error al eliminar de Firebase.', 'error');
+                console.error(err);
+                const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
+                const idx = lista.indexOf(valorSeleccionado);
+                if (idx !== -1) {
+                    lista.splice(idx, 1);
+                    guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista);
+                }
+            });
         }
 
         function asegurarOpcion(selectId, valor) {
             if (!valor) return;
             const select = document.getElementById(selectId);
             let existe = false;
-            for (let opt of select.options) { if (opt.value === valor) { existe = true; break; } }
+            for (let opt of select.options) {
+                if (opt.value === valor) { existe = true; break; }
+            }
             if (!existe) {
                 const option = document.createElement('option');
-                option.value = valor; option.textContent = valor;
+                option.value = valor;
+                option.textContent = valor;
                 select.appendChild(option);
                 select.value = valor;
                 const ref = selectId === 'maquina' ? maquinasRef : jefesRef;
                 ref.transaction((current) => {
                     if (!current || !Array.isArray(current)) current = [];
-                    if (!current.includes(valor)) current.push(valor);
+                    if (!current.includes(valor)) {
+                        current.push(valor);
+                    }
                     return current;
-                }).catch(err => console.error('Error asegurar opción:', err));
+                }).catch(err => {
+                    console.error('Error al guardar opción asegurada:', err);
+                    const lista = obtenerOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes') || [];
+                    if (!lista.includes(valor)) {
+                        lista.push(valor);
+                        guardarOpcionesOffline(selectId === 'maquina' ? 'maquinas' : 'jefes', lista);
+                    }
+                });
                 if (selectId === 'maquina') {
                     actualizarFiltroKPIs([...select.options].slice(1).map(opt => opt.value));
                 }
@@ -792,57 +2250,75 @@
             }
         }
 
-        // ============ FIRMA ============
+        // --- FIRMA DIGITAL ---
         function initSignaturePads() {
             const canvasTec = document.getElementById('firmaTecnico');
             const canvasJefe = document.getElementById('firmaJefe');
             signaturePadTecnico = new SignaturePad(canvasTec, { backgroundColor: '#fafafa' });
             signaturePadJefe = new SignaturePad(canvasJefe, { backgroundColor: '#fafafa' });
-            resizeCanvas(canvasTec); resizeCanvas(canvasJefe);
+            resizeCanvas(canvasTec);
+            resizeCanvas(canvasJefe);
         }
+
         function resizeCanvas(canvas) {
             const rect = canvas.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
-            canvas.getContext('2d').scale(dpr, dpr);
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
         }
+
         function limpiarFirma(id) {
             if (id === 'firmaTecnico') signaturePadTecnico.clear();
             else if (id === 'firmaJefe') signaturePadJefe.clear();
         }
+
         function obtenerFirmaDataURL(id) {
             const pad = id === 'firmaTecnico' ? signaturePadTecnico : signaturePadJefe;
             if (pad.isEmpty()) return null;
             return pad.toDataURL('image/png');
         }
+
         function cargarFirmaDesdeDataURL(id, dataURL) {
             if (!dataURL) return;
             const pad = id === 'firmaTecnico' ? signaturePadTecnico : signaturePadJefe;
             pad.fromDataURL(dataURL);
         }
+
         window.addEventListener('resize', () => {
-            [{ pad: signaturePadTecnico, canvas: document.getElementById('firmaTecnico') },
-             { pad: signaturePadJefe, canvas: document.getElementById('firmaJefe') }].forEach(item => {
+            [
+                { pad: signaturePadTecnico, canvas: document.getElementById('firmaTecnico') },
+                { pad: signaturePadJefe, canvas: document.getElementById('firmaJefe') }
+            ].forEach(item => {
                 if (item.canvas && item.pad) {
                     if (!item.pad.isEmpty()) {
                         const data = item.pad.toDataURL();
                         resizeCanvas(item.canvas);
                         item.pad.fromDataURL(data);
-                    } else { resizeCanvas(item.canvas); }
+                    } else {
+                        resizeCanvas(item.canvas);
+                    }
                 }
             });
         });
 
-        // ============ CORRELATIVO ============
+        // --- CORRELATIVO Y CONTADOR ---
         function obtenerProximoNumero(callback) {
-            if (!navigator.onLine) { callback(Math.floor(Math.random() * 900) + 100); return; }
-            contadorRef.transaction((current) => (current === null ? 1 : current + 1), (error, committed, snapshot) => {
+            if (!navigator.onLine) {
+                callback(Math.floor(Math.random() * 900) + 100);
+                return;
+            }
+            contadorRef.transaction((current) => {
+                if (current === null) return 1;
+                return current + 1;
+            }, (error, committed, snapshot) => {
                 if (error) callback(null);
                 else if (committed) callback(snapshot.val());
                 else callback(null);
             }, false);
         }
+
         function asignarSiguienteNumero() {
             obtenerProximoNumero((num) => {
                 if (num !== null) {
@@ -851,52 +2327,62 @@
                 }
             });
         }
+
         function cargarSugerenciaNumero() {
             if (!navigator.onLine) return;
             contadorRef.once('value', (snapshot) => {
                 const val = snapshot.val();
                 const proximo = (val !== null) ? val + 1 : 1;
                 const input = document.getElementById('numeroSolicitud');
-                if (!input.value || input.value === '0' || input.value === '') input.value = String(proximo).padStart(3, '0');
+                if (!input.value || input.value === '0' || input.value === '') {
+                    input.value = String(proximo).padStart(3, '0');
+                }
             }).catch(console.error);
         }
+
         function verificarNumeroExistente(numero, callback) {
-            if (!navigator.onLine) { callback(false); return; }
+            if (!navigator.onLine) {
+                callback(false);
+                return;
+            }
             solicitudesRef.orderByChild('numero_solicitud').equalTo(numero).once('value')
                 .then((snapshot) => callback(snapshot.exists()))
                 .catch(() => callback(false));
         }
 
-        // ============ MAQUINARIA ============
+        // --- MAQUINARIA Y EVENTOS ---
         const datosMaquinas = {
             'Coteadora': { tecnico: 'Michael Pintos', jefe: 'Ángel' },
             'Impresora Flexotech 6C': { tecnico: 'Nicolás Morel', jefe: 'Julio' },
             'Fondera 1': { tecnico: 'Michael Pintos', jefe: 'Guillermo' },
             'Fondera 2': { tecnico: 'Nicolás Morel', jefe: 'Carlos Barreto' },
             'Linea 3': { tecnico: 'Michael Pintos', jefe: 'De los Santos' },
-            'Linea 4': { tecnico: 'Michael Pintos', jefe: 'Fabricio' },
             'Tubera 1': { tecnico: 'Nicolás Morel', jefe: 'Claudio' },
             'Tubera 2': { tecnico: 'Michael Pintos', jefe: 'Cristian' }
         };
+
         function actualizarDatosMaquina() {
             const maquina = document.getElementById('maquina').value;
             const tecnicoSelect = document.getElementById('tecnico');
             const jefeSelect = document.getElementById('jefeMaquina');
             if (maquina && datosMaquinas[maquina]) {
-                tecnicoSelect.value = datosMaquinas[maquina].tecnico;
-                jefeSelect.value = datosMaquinas[maquina].jefe;
-            }
-            if (maquina) {
+                const datos = datosMaquinas[maquina];
+                tecnicoSelect.value = datos.tecnico;
+                jefeSelect.value = datos.jefe;
+                document.getElementById('errorMaquina').style.display = 'none';
+                document.getElementById('maquina').classList.remove('campo-requerido');
+            } else if (maquina) {
                 document.getElementById('errorMaquina').style.display = 'none';
                 document.getElementById('maquina').classList.remove('campo-requerido');
             }
         }
 
-        // ============ CHECKBOXES ============
+        // --- EVENTOS DE CHECKBOXES ---
         const capSi = document.getElementById('capSi');
         const capNo = document.getElementById('capNo');
         capSi.addEventListener('change', () => { if (capSi.checked) capNo.checked = false; });
         capNo.addEventListener('change', () => { if (capNo.checked) capSi.checked = false; });
+
         document.getElementById('otroTipoSelect').addEventListener('change', function() {
             if (this.value) document.getElementById('otroTipoCheck').checked = true;
         });
@@ -904,7 +2390,14 @@
             if (this.value) document.getElementById('otraCausaCheck').checked = true;
         });
 
-        // ============ TIEMPOS ============
+        document.getElementById('prevOtroTipoSelect').addEventListener('change', function() {
+            if (this.value) document.getElementById('prevOtroTipoCheck').checked = true;
+        });
+        document.getElementById('prevOtraCausaSelect').addEventListener('change', function() {
+            if (this.value) document.getElementById('prevOtraCausaCheck').checked = true;
+        });
+
+        // --- TIEMPOS ---
         function calcularDuracion() {
             const llegada = document.getElementById('horaLlegada').value;
             const fin = document.getElementById('horaFinalizacion').value;
@@ -918,6 +2411,7 @@
                 document.getElementById('duracion').value = '';
             }
         }
+
         function sumarMinutos(hora, minutos) {
             if (!hora) return '';
             const partes = hora.split(':');
@@ -927,11 +2421,16 @@
             if (h >= 24) h -= 24;
             return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
         }
+
         function actualizarHoraLlegada() {
             const horaSol = document.getElementById('horaSolicitud').value;
-            document.getElementById('horaLlegada').value = horaSol ? sumarMinutos(horaSol, 2) : '';
+            const llegadaInput = document.getElementById('horaLlegada');
+            if (!llegadaInput.value) {
+                llegadaInput.value = horaSol ? sumarMinutos(horaSol, 2) : '';
+            }
             calcularDuracion();
         }
+
         function setFechaHoraActual() {
             const hoy = new Date();
             const year = hoy.getFullYear();
@@ -949,6 +2448,7 @@
             const jefe = document.getElementById('jefeMaquina').value;
             const numInput = document.getElementById('numeroSolicitud');
             const numero = parseInt(numInput.value, 10);
+
             if (!maquina) {
                 document.getElementById('errorMaquina').style.display = 'block';
                 document.getElementById('maquina').classList.add('campo-requerido');
@@ -981,12 +2481,14 @@
             return valido;
         }
 
-        // ============ GUARDAR ============
+        // --- GUARDADO DE DATOS ---
         async function guardarDatos() {
             if (!validarFormulario()) return;
+
             const btn = document.getElementById('btnGuardar');
             btn.disabled = true;
             btn.textContent = '⏳ GUARDANDO...';
+
             const numInput = document.getElementById('numeroSolicitud');
             let numero = parseInt(numInput.value, 10);
             const editKey = document.getElementById('editKey').value;
@@ -1016,7 +2518,7 @@
                 hora_llegada: document.getElementById('horaLlegada').value,
                 hora_finalizacion: document.getElementById('horaFinalizacion').value,
                 duracion: document.getElementById('duracion').value || '',
-                estado: document.getElementById('estado').value,
+                estado: document.getElementById('estado').value || "Finalizada",
                 descripcion: document.getElementById('descripcion').value,
                 tipo_problema: {
                     mecanico: document.getElementById('mecanico').checked,
@@ -1033,7 +2535,10 @@
                     otros: document.getElementById('otraCausaCheck').checked,
                     otro_especificar: document.getElementById('otraCausaSelect').value
                 },
-                capacitacion: { si: document.getElementById('capSi').checked, no: document.getElementById('capNo').checked },
+                capacitacion: {
+                    si: document.getElementById('capSi').checked,
+                    no: document.getElementById('capNo').checked
+                },
                 firma_tecnico: obtenerFirmaDataURL('firmaTecnico') || '',
                 firma_jefe: obtenerFirmaDataURL('firmaJefe') || '',
                 timestamp: Date.now()
@@ -1057,8 +2562,11 @@
                     mostrarModalExito(`Solicitud Nº ${String(numero).padStart(3, '0')} guardada.`);
                     contadorRef.transaction(current => (current === null || numero > current) ? numero : current);
                 }
+
                 limpiarFormulario(true);
-                if (document.getElementById('listaRegistros').style.display === 'block') cargarUltimosRegistros();
+                if (document.getElementById('listaRegistros').style.display === 'block') {
+                    cargarUltimosRegistros();
+                }
                 cerrarDetalle();
             } catch (error) {
                 mostrarToast('❌ Error: ' + error.message, 'error');
@@ -1068,12 +2576,16 @@
             }
         }
 
-        // ============ NOTIFICACIONES ============
+        // --- NOTIFICACIONES ---
         function mostrarModalExito(mensaje) {
             document.getElementById('modalMensaje').textContent = mensaje;
             document.getElementById('modalExito').style.display = 'flex';
         }
-        function cerrarModal() { document.getElementById('modalExito').style.display = 'none'; }
+
+        function cerrarModal() {
+            document.getElementById('modalExito').style.display = 'none';
+        }
+
         function mostrarToast(mensaje, tipo = 'info') {
             const toast = document.getElementById('toast');
             toast.textContent = mensaje;
@@ -1086,16 +2598,21 @@
             window.toastTimeout = setTimeout(() => { toast.style.display = 'none'; }, 3500);
         }
 
-        // ============ REGISTROS ============
+        // --- REGISTROS Y CONSULTAS ---
         async function cargarUltimosRegistros() {
             const contenedor = document.getElementById('listaRegistros');
             const contenido = document.getElementById('contenidoRegistros');
             contenedor.style.display = 'block';
             contenido.innerHTML = '<p>Cargando registros...</p>';
+
             try {
                 const snapshot = await solicitudesRef.orderByChild('numero_solicitud').once('value');
                 const registros = snapshot.val();
-                if (!registros) { contenido.innerHTML = '<p>📭 No hay registros.</p>'; return; }
+                if (!registros) {
+                    contenido.innerHTML = '<p>📭 No hay registros.</p>';
+                    return;
+                }
+
                 const items = Object.keys(registros).map(key => ({
                     key: key,
                     numero: registros[key].numero_solicitud || 0,
@@ -1107,12 +2624,15 @@
                     estado: registros[key].estado || 'Finalizada',
                     timestamp: registros[key].timestamp || 0
                 })).sort((a, b) => a.numero - b.numero);
+
                 listaRegistrosCache = items;
                 renderizarLista(items);
             } catch (error) {
+                console.error("Error cargando registros:", error);
                 contenido.innerHTML = `<p>❌ Error al cargar registros: ${error.message}</p>`;
             }
         }
+
         function renderizarLista(items) {
             const contenido = document.getElementById('contenidoRegistros');
             let html = '';
@@ -1121,6 +2641,7 @@
                 const ts = item.timestamp ? new Date(item.timestamp).toLocaleString() : '';
                 const estadoClase = `estado-${item.estado.toLowerCase().replace(' ', '')}`;
                 const descTexto = item.descripcion ? item.descripcion : 'Sin descripción';
+
                 html += `
                     <div class="registro-item-lista" onclick="verDetalle('${item.key}')">
                         <div class="info">
@@ -1140,45 +2661,59 @@
             }
             contenido.innerHTML = html;
         }
+
         function aplicarFiltros() {
             const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase();
             const estado = document.getElementById('filtroEstado').value;
             const maquinaFiltro = document.getElementById('filtroMaquina').value.toLowerCase();
+
             const filtrados = listaRegistrosCache.filter(item => {
                 const numStr = String(item.numero).padStart(3, '0');
-                const matchBusqueda = numStr.includes(busqueda) || item.maquina.toLowerCase().includes(busqueda) || item.tecnico.toLowerCase().includes(busqueda) || item.descripcion.toLowerCase().includes(busqueda);
+                const matchBusqueda = numStr.includes(busqueda) ||
+                                     item.maquina.toLowerCase().includes(busqueda) ||
+                                     item.tecnico.toLowerCase().includes(busqueda) ||
+                                     item.descripcion.toLowerCase().includes(busqueda);
                 const matchEstado = estado === '' || item.estado === estado;
                 const matchMaquina = maquinaFiltro === '' || item.maquina.toLowerCase().includes(maquinaFiltro);
                 return matchBusqueda && matchEstado && matchMaquina;
             });
             renderizarLista(filtrados);
         }
+
         function cerrarLista() { document.getElementById('listaRegistros').style.display = 'none'; }
+
         async function verDetalle(key) {
             const detalleDiv = document.getElementById('detalleRegistro');
             const contenido = document.getElementById('detalleContenido');
             detalleDiv.style.display = 'block';
             contenido.innerHTML = '<p>Cargando detalle...</p>';
             detalleKeyActual = key;
+
             try {
                 const snapshot = await solicitudesRef.child(key).once('value');
                 const r = snapshot.val();
                 if (!r) return;
                 contenido.innerHTML = generarHTMLRegistro(r);
                 detalleDiv.scrollIntoView({ behavior: 'smooth' });
-            } catch (error) { contenido.innerHTML = '<p>❌ Error al cargar detalle.</p>'; }
+            } catch (error) {
+                contenido.innerHTML = '<p>❌ Error al cargar detalle.</p>';
+            }
         }
+
         function cerrarDetalle() {
             document.getElementById('detalleRegistro').style.display = 'none';
             detalleKeyActual = null;
         }
+
         function generarHTMLRegistro(data) {
             const num = String(data.numero_solicitud || '???').padStart(3, '0');
             const estadoClase = `estado-${(data.estado || 'Finalizada').toLowerCase().replace(' ', '')}`;
+
             return `
                 <div class="registro-card">
                     <div style="font-size:10pt; font-weight:bold; background:#eaeef2; padding:3px 8px; border-left:4px solid #2c3e50; margin-bottom:4px;">
-                        📄 Solicitud Nº ${num} <span class="estado-badge ${estadoClase}">${data.estado || 'Finalizada'}</span>
+                        📄 Solicitud Nº ${num}
+                        <span class="estado-badge ${estadoClase}">${data.estado || 'Finalizada'}</span>
                     </div>
                     <table class="grid-table">
                         <tr><td class="label">FECHA:</td><td class="value"><input type="text" value="${data.fecha || ''}" readonly></td>
@@ -1196,13 +2731,16 @@
                 </div>
             `;
         }
+
         function editarDesdeDetalle() {
             if (!detalleKeyActual) return;
             solicitudesRef.child(detalleKeyActual).once('value').then(snapshot => {
                 const data = snapshot.val();
                 if (!data) return;
+
                 asegurarOpcion('maquina', data.maquina);
                 asegurarOpcion('jefeMaquina', data.jefe);
+
                 document.getElementById('numeroSolicitud').value = String(data.numero_solicitud || '').padStart(3, '0');
                 document.getElementById('fechaSolicitud').value = data.fecha ? data.fecha.split('/').reverse().join('-') : '';
                 document.getElementById('horaSolicitud').value = data.hora_solicitud || '';
@@ -1215,6 +2753,7 @@
                 document.getElementById('duracion').value = data.duracion || '';
                 document.getElementById('estado').value = data.estado || 'Finalizada';
                 document.getElementById('descripcion').value = data.descripcion || '';
+
                 const tp = data.tipo_problema || {};
                 document.getElementById('mecanico').checked = tp.mecanico || false;
                 document.getElementById('electrico').checked = tp.electrico || false;
@@ -1223,40 +2762,61 @@
                 document.getElementById('ajuste').checked = tp.ajuste || false;
                 document.getElementById('otroTipoCheck').checked = tp.otros || false;
                 document.getElementById('otroTipoSelect').value = tp.otro_especificar || '';
+
                 const causa = data.causa || {};
                 document.getElementById('desgaste').checked = causa.desgaste || false;
                 document.getElementById('malAjuste').checked = causa.mal_ajuste || false;
                 document.getElementById('otraCausaCheck').checked = causa.otros || false;
                 document.getElementById('otraCausaSelect').value = causa.otro_especificar || '';
+
                 const cap = data.capacitacion || {};
                 document.getElementById('capSi').checked = cap.si || false;
                 document.getElementById('capNo').checked = cap.no || false;
-                if (data.firma_tecnico) cargarFirmaDesdeDataURL('firmaTecnico', data.firma_tecnico); else signaturePadTecnico.clear();
-                if (data.firma_jefe) cargarFirmaDesdeDataURL('firmaJefe', data.firma_jefe); else signaturePadJefe.clear();
+
+                if (data.firma_tecnico) cargarFirmaDesdeDataURL('firmaTecnico', data.firma_tecnico);
+                else signaturePadTecnico.clear();
+                if (data.firma_jefe) cargarFirmaDesdeDataURL('firmaJefe', data.firma_jefe);
+                else signaturePadJefe.clear();
+
                 document.getElementById('editKey').value = detalleKeyActual;
                 document.getElementById('btnGuardar').textContent = '💾 ACTUALIZAR';
-                mostrarToast('✏️ Registro cargado para editar.', 'info');
+                mostrarToast('✏️ Registro cargado en el formulario para editar.', 'info');
                 cerrarDetalle();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
-        function eliminarRegistro(key) {
-            if (!confirm('¿Desea eliminar la solicitud?')) return;
-            solicitudesRef.child(key).remove().then(() => {
-                mostrarToast('✅ Registro eliminado.', 'success');
-                cargarUltimosRegistros();
-                cerrarDetalle();
+
+        async function eliminarRegistro(key) {
+            const confirmado = await abrirDialogoCustom({
+                titulo: '🗑️ Eliminar Solicitud',
+                mensaje: '¿Desea eliminar permanentemente esta solicitud de mantenimiento?',
+                conInput: false
             });
+            if (!confirmado) return;
+            solicitudesRef.child(key).remove()
+                .then(() => {
+                    mostrarToast('✅ Registro eliminado.', 'success');
+                    cargarUltimosRegistros();
+                    cerrarDetalle();
+                });
         }
 
-        // ============ GRÁFICOS ============
+        // --- GRÁFICOS ---
         function destruirGraficos() {
-            if (chartMaquinas) { chartMaquinas.destroy(); chartMaquinas = null; }
-            if (chartEstados) { chartEstados.destroy(); chartEstados = null; }
+            if (chartMaquinas) {
+                chartMaquinas.destroy();
+                chartMaquinas = null;
+            }
+            if (chartEstados) {
+                chartEstados.destroy();
+                chartEstados = null;
+            }
         }
+
         function crearGraficos(datos) {
             const container = document.getElementById('graficosContainer');
             const mensaje = document.getElementById('mensajeSinDatos');
+
             if (!datos || datos.length === 0) {
                 container.style.display = 'none';
                 mensaje.style.display = 'block';
@@ -1264,70 +2824,153 @@
             }
             container.style.display = 'flex';
             mensaje.style.display = 'none';
+
             const conteoMaquinas = {};
-            datos.forEach(r => { const maq = r.maquina || 'Sin máquina'; conteoMaquinas[maq] = (conteoMaquinas[maq] || 0) + 1; });
-            const coloresMaq = ['#3498db','#2ecc71','#f39c12','#e74c3c','#9b59b6','#1abc9c','#e67e22','#34495e'];
-            const conteoEstados = {};
-            datos.forEach(r => { const est = r.estado || 'Finalizada'; conteoEstados[est] = (conteoEstados[est] || 0) + 1; });
-            const coloresEst = { 'Finalizada': '#2ecc71', 'Pendiente': '#f1c40f', 'En curso': '#3498db', 'Cancelada': '#e74c3c' };
-            const labelsEst = Object.keys(conteoEstados);
-            const bgEst = labelsEst.map(l => coloresEst[l] || '#95a5a6');
-            chartMaquinas = new Chart(document.getElementById('chartMaquinas').getContext('2d'), {
-                type: 'bar',
-                data: { labels: Object.keys(conteoMaquinas), datasets: [{ label: 'Solicitudes', data: Object.values(conteoMaquinas), backgroundColor: coloresMaq, borderColor: '#2c3e50', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            datos.forEach(r => {
+                const maq = r.maquina || 'Sin máquina';
+                conteoMaquinas[maq] = (conteoMaquinas[maq] || 0) + 1;
             });
-            chartEstados = new Chart(document.getElementById('chartEstados').getContext('2d'), {
+            const labelsMaq = Object.keys(conteoMaquinas);
+            const dataMaq = Object.values(conteoMaquinas);
+            const coloresMaq = ['#3498db','#2ecc71','#f39c12','#e74c3c','#9b59b6','#1abc9c','#e67e22','#34495e'];
+
+            const conteoEstados = {};
+            datos.forEach(r => {
+                const est = r.estado || 'Finalizada';
+                conteoEstados[est] = (conteoEstados[est] || 0) + 1;
+            });
+            const labelsEst = Object.keys(conteoEstados);
+            const dataEst = Object.values(conteoEstados);
+            const coloresEst = {
+                'Finalizada': '#2ecc71',
+                'Pendiente': '#f1c40f',
+                'En curso': '#3498db',
+                'Cancelada': '#e74c3c'
+            };
+            const bgEst = labelsEst.map(l => coloresEst[l] || '#95a5a6');
+
+            const ctxMaq = document.getElementById('chartMaquinas').getContext('2d');
+            chartMaquinas = new Chart(ctxMaq, {
+                type: 'bar',
+                data: {
+                    labels: labelsMaq,
+                    datasets: [{
+                        label: 'Cantidad de solicitudes',
+                        data: dataMaq,
+                        backgroundColor: coloresMaq.slice(0, labelsMaq.length),
+                        borderColor: '#2c3e50',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw} solicitud(es)` } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+
+            const ctxEst = document.getElementById('chartEstados').getContext('2d');
+            chartEstados = new Chart(ctxEst, {
                 type: 'doughnut',
-                data: { labels: labelsEst, datasets: [{ data: Object.values(conteoEstados), backgroundColor: bgEst, borderColor: '#ffffff', borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+                data: {
+                    labels: labelsEst,
+                    datasets: [{
+                        data: dataEst,
+                        backgroundColor: bgEst,
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} (${((ctx.raw/datos.length)*100).toFixed(1)}%)` } }
+                    }
+                }
             });
         }
 
-        // ============ KPIs ============
+        // --- CÁLCULO DE KPIs ---
         async function mostrarKPIs() {
             document.getElementById('seccionKPIs').style.display = 'block';
             await calcularKPIs();
             document.getElementById('seccionKPIs').scrollIntoView({ behavior: 'smooth' });
         }
+
         function cerrarKPIs() {
             document.getElementById('seccionKPIs').style.display = 'none';
             destruirGraficos();
         }
+
         async function calcularKPIs() {
             try {
                 const snapshot = await solicitudesRef.once('value');
                 const registros = snapshot.val();
+
                 if (!registros) {
                     actualizarTarjetasKPI(0, 0, 0, 0);
                     destruirGraficos();
                     document.getElementById('mensajeSinDatos').style.display = 'block';
                     document.getElementById('graficosContainer').style.display = 'none';
+                    document.getElementById('contenidoAnalisisIA').innerHTML = '<p style="color:#64748b;">📭 No hay datos suficientes para generar un análisis.</p>';
                     return;
                 }
+
                 const maquinaSeleccionada = document.getElementById('kpiFiltroMaquina').value;
                 const lista = Object.values(registros);
-                const filtrados = lista.filter(r => maquinaSeleccionada === 'TODAS' || r.maquina === maquinaSeleccionada);
+
+                const filtrados = lista.filter(r => {
+                    if (maquinaSeleccionada !== 'TODAS' && r.maquina !== maquinaSeleccionada) {
+                        return false;
+                    }
+                    return true;
+                });
+
                 const finalizadas = filtrados.filter(r => (r.estado === 'Finalizada' || !r.estado) && r.duracion && !isNaN(parseInt(r.duracion)));
+
                 const totalFallas = filtrados.length;
                 const totalFinalizadas = finalizadas.length;
+
                 const tiempoParadaTotal = finalizadas.reduce((acc, r) => acc + parseInt(r.duracion, 10), 0);
                 const mttr = totalFinalizadas > 0 ? (tiempoParadaTotal / totalFinalizadas).toFixed(1) : 0;
+
                 let mtbfHoras = 0;
                 if (totalFallas > 1) {
                     const timestamps = filtrados.map(r => r.timestamp).filter(ts => ts).sort((a, b) => a - b);
                     if (timestamps.length >= 2) {
-                        const horasTranscurridas = (timestamps[timestamps.length - 1] - timestamps[0]) / (1000 * 60 * 60);
+                        const primerRegistro = timestamps[0];
+                        const ultimoRegistro = timestamps[timestamps.length - 1];
+                        const horasTranscurridas = (ultimoRegistro - primerRegistro) / (1000 * 60 * 60);
                         const horasParada = tiempoParadaTotal / 60;
                         const horasOperativas = Math.max(0, horasTranscurridas - horasParada);
                         mtbfHoras = (horasOperativas / totalFallas).toFixed(1);
                     }
                 }
+
                 actualizarTarjetasKPI(totalFallas, mttr, mtbfHoras, tiempoParadaTotal);
+
                 destruirGraficos();
                 crearGraficos(filtrados);
-            } catch (error) { mostrarToast("❌ Error al calcular KPIs: " + error.message, "error"); }
+
+                // Análisis IA automático (solo si la sección está visible)
+                if (document.getElementById('seccionKPIs').style.display === 'block') {
+                    generarAnalisisIA(filtrados);
+                }
+
+            } catch (error) {
+                console.error("Error al calcular KPIs:", error);
+                mostrarToast("❌ Error al calcular KPIs: " + error.message, "error");
+            }
         }
+
         function actualizarTarjetasKPI(total, mttr, mtbf, parada) {
             document.getElementById('kpiTotalFallas').textContent = total;
             document.getElementById('kpiMTTR').textContent = `${mttr} min`;
@@ -1335,44 +2978,314 @@
             document.getElementById('kpiTiempoParada').textContent = `${parada} min (${(parada/60).toFixed(1)} hs)`;
         }
 
-        // ============ EXPORTAR ============
+        // ============================================================
+        //  🤖 ANÁLISIS INTELIGENTE CON IA (KPIs + Excel)
+        // ============================================================
+
+        // --- Genera el HTML del análisis y lo muestra en el panel de KPIs ---
+        async function generarAnalisisIA(filtrados) {
+            const contenedor = document.getElementById('contenidoAnalisisIA');
+            contenedor.innerHTML = '<em style="color:#64748b;">⏳ Generando análisis con IA...</em>';
+
+            try {
+                if (!filtrados) {
+                    const snapshot = await solicitudesRef.once('value');
+                    const registros = snapshot.val() || {};
+                    const maquinaSel = document.getElementById('kpiFiltroMaquina').value;
+                    filtrados = Object.values(registros).filter(r =>
+                        maquinaSel === 'TODAS' || r.maquina === maquinaSel
+                    );
+                }
+
+                if (filtrados.length === 0) {
+                    contenedor.innerHTML = '<p style="color:#64748b;">📭 No hay datos suficientes para generar un análisis.</p>';
+                    return;
+                }
+
+                const metricas = calcularMetricasParaIA(filtrados);
+                let htmlAnalisis = null;
+
+                try {
+                    htmlAnalisis = await generarAnalisisConGemini(metricas);
+                } catch (err) {
+                    console.warn('Fallback a análisis local:', err);
+                }
+                if (!htmlAnalisis) htmlAnalisis = generarAnalisisLocal(metricas);
+
+                contenedor.innerHTML = htmlAnalisis;
+
+            } catch (err) {
+                contenedor.innerHTML = `<p style="color:#dc2626;">❌ Error generando análisis: ${err.message}</p>`;
+            }
+        }
+
+        // --- Calcula todas las métricas y conteos que necesita la IA ---
+        function calcularMetricasParaIA(filtrados) {
+            const finalizadas = filtrados.filter(r =>
+                (r.estado === 'Finalizada' || !r.estado) && r.duracion && !isNaN(parseInt(r.duracion, 10))
+            );
+            const totalFallas = filtrados.length;
+            const tiempoParadaTotal = finalizadas.reduce((a, r) => a + parseInt(r.duracion, 10), 0);
+            const mttr = finalizadas.length > 0 ? (tiempoParadaTotal / finalizadas.length).toFixed(1) : 0;
+
+            const porMaquina = {}, porTecnico = {}, porTipo = {}, porCausa = {}, porEstado = {};
+            filtrados.forEach(r => {
+                const m = r.maquina || 'Sin asignar';
+                porMaquina[m] = (porMaquina[m] || 0) + 1;
+                const t = r.tecnico || 'Sin asignar';
+                porTecnico[t] = (porTecnico[t] || 0) + 1;
+                const e = r.estado || 'Finalizada';
+                porEstado[e] = (porEstado[e] || 0) + 1;
+
+                if (r.tipo_problema) {
+                    Object.entries(r.tipo_problema).forEach(([k, v]) => {
+                        if (v === true && k !== 'otros') porTipo[k] = (porTipo[k] || 0) + 1;
+                    });
+                    if (r.tipo_problema.otros && r.tipo_problema.otro_especificar) {
+                        porTipo[r.tipo_problema.otro_especificar] = (porTipo[r.tipo_problema.otro_especificar] || 0) + 1;
+                    }
+                }
+                if (r.causa) {
+                    Object.entries(r.causa).forEach(([k, v]) => {
+                        if (v === true && k !== 'otros') porCausa[k] = (porCausa[k] || 0) + 1;
+                    });
+                    if (r.causa.otros && r.causa.otro_especificar) {
+                        porCausa[r.causa.otro_especificar] = (porCausa[r.causa.otro_especificar] || 0) + 1;
+                    }
+                }
+            });
+
+            const ordenar = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
+            const maquinaTop = ordenar(porMaquina)[0];
+            const tecnicoTop = ordenar(porTecnico)[0];
+            const tipoTop = ordenar(porTipo)[0];
+            const causaTop = ordenar(porCausa)[0];
+
+            return {
+                maquinaFiltro: document.getElementById('kpiFiltroMaquina').value,
+                totalFallas,
+                mttr: parseFloat(mttr),
+                tiempoParadaTotal,
+                maquinaTop: maquinaTop ? { nombre: maquinaTop[0], cantidad: maquinaTop[1] } : null,
+                tecnicoTop: tecnicoTop ? { nombre: tecnicoTop[0], cantidad: tecnicoTop[1] } : null,
+                tipoTop: tipoTop ? { nombre: tipoTop[0], cantidad: tipoTop[1] } : null,
+                causaTop: causaTop ? { nombre: causaTop[0], cantidad: causaTop[1] } : null,
+                distribucionEstados: porEstado
+            };
+        }
+
+        // --- Llama a Gemini para generar el análisis en HTML ---
+        async function generarAnalisisConGemini(metricas) {
+            const apiKey = "";   // ← pega aquí tu API key si vas a usar Gemini
+            if (!apiKey) throw new Error('Sin API key configurada');
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+
+            const prompt = `Eres un experto en mantenimiento industrial de la planta BOLPAR S.A.
+Analiza los siguientes KPIs y devuelve un análisis CONCISO y ACCIONABLE en ESPAÑOL.
+
+DATOS:
+- Máquina filtrada: ${metricas.maquinaFiltro}
+- Total de solicitudes: ${metricas.totalFallas}
+- MTTR (tiempo medio de reparación): ${metricas.mttr} minutos
+- Tiempo total de parada: ${metricas.tiempoParadaTotal} minutos (${(metricas.tiempoParadaTotal/60).toFixed(1)} hs)
+- Máquina con más fallas: ${metricas.maquinaTop ? metricas.maquinaTop.nombre + ' (' + metricas.maquinaTop.cantidad + ')' : 'N/A'}
+- Técnico con más intervenciones: ${metricas.tecnicoTop ? metricas.tecnicoTop.nombre + ' (' + metricas.tecnicoTop.cantidad + ')' : 'N/A'}
+- Tipo de falla más común: ${metricas.tipoTop ? metricas.tipoTop.nombre + ' (' + metricas.tipoTop.cantidad + ')' : 'N/A'}
+- Causa más común: ${metricas.causaTop ? metricas.causaTop.nombre + ' (' + metricas.causaTop.cantidad + ')' : 'N/A'}
+- Distribución por estado: ${JSON.stringify(metricas.distribucionEstados)}
+
+FORMATO DE SALIDA (HTML simple, sin markdown, sin backticks):
+<div><strong>📋 Resumen ejecutivo:</strong> ...(2-3 líneas)</div>
+<div style="margin-top:8px;"><strong>🔍 Hallazgos clave:</strong><ul style="margin:4px 0 0 18px;"><li>...</li><li>...</li><li>...</li></ul></div>
+<div style="margin-top:8px;"><strong>💡 Recomendaciones:</strong><ul style="margin:4px 0 0 18px;"><li>...</li><li>...</li><li>...</li></ul></div>
+
+Máximo 300 palabras.`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const data = await response.json();
+            const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!texto) throw new Error('Respuesta vacía de Gemini');
+            return texto.replace(/```html/gi, '').replace(/```/g, '').trim();
+        }
+
+        // --- Análisis local de respaldo (sin internet o sin API key) ---
+        function generarAnalisisLocal(metricas) {
+            if (metricas.totalFallas === 0) {
+                return '<p>No hay datos suficientes para generar un análisis significativo.</p>';
+            }
+
+            const hallazgos = [];
+            const recomendaciones = [];
+
+            if (metricas.maquinaTop && metricas.maquinaTop.cantidad >= 2) {
+                const pct = ((metricas.maquinaTop.cantidad / metricas.totalFallas) * 100).toFixed(0);
+                hallazgos.push(`<li><strong>${metricas.maquinaTop.nombre}</strong> concentra ${metricas.maquinaTop.cantidad} de ${metricas.totalFallas} fallas (<strong>${pct}%</strong>). Requiere atención prioritaria.</li>`);
+                recomendaciones.push(`<li>Programar mantenimiento preventivo en <strong>${metricas.maquinaTop.nombre}</strong> para reducir paradas correctivas.</li>`);
+            }
+
+            if (metricas.mttr > 60) {
+                hallazgos.push(`<li>El MTTR de <strong>${metricas.mttr} min</strong> supera la hora por intervención, indicando reparaciones complejas o tiempos de espera.</li>`);
+                recomendaciones.push('<li>Revisar procedimientos de diagnóstico y disponibilidad de repuestos para reducir el MTTR.</li>');
+            } else if (metricas.mttr > 0) {
+                hallazgos.push(`<li>El MTTR de <strong>${metricas.mttr} min</strong> está dentro de un rango operativo aceptable.</li>`);
+            }
+
+            if (metricas.causaTop) {
+                hallazgos.push(`<li>La causa predominante es <strong>${metricas.causaTop.nombre}</strong> (${metricas.causaTop.cantidad} casos), indicando un patrón repetitivo.</li>`);
+                recomendaciones.push(`<li>Implementar acciones correctivas sobre <strong>${metricas.causaTop.nombre.toLowerCase()}</strong> (capacitación, ajuste de procedimientos o cambio de componentes).</li>`);
+            }
+
+            if (metricas.tipoTop) {
+                hallazgos.push(`<li>El tipo de falla más frecuente es <strong>${metricas.tipoTop.nombre}</strong> (${metricas.tipoTop.cantidad} casos).</li>`);
+            }
+
+            const resumen = `Se registraron <strong>${metricas.totalFallas}</strong> solicitudes${metricas.maquinaFiltro !== 'TODAS' ? ' para <strong>' + metricas.maquinaFiltro + '</strong>' : ''}, con un tiempo total de parada de <strong>${metricas.tiempoParadaTotal} min</strong> (${(metricas.tiempoParadaTotal / 60).toFixed(1)} hs).`;
+
+            return `
+                <div><strong>📋 Resumen ejecutivo:</strong> ${resumen}</div>
+                <div style="margin-top:8px;"><strong>🔍 Hallazgos clave:</strong>
+                    <ul style="margin:4px 0 0 18px;">${hallazgos.join('') || '<li>Sin hallazgos relevantes.</li>'}</ul>
+                </div>
+                <div style="margin-top:8px;"><strong>💡 Recomendaciones:</strong>
+                    <ul style="margin:4px 0 0 18px;">${recomendaciones.join('') || '<li>Continuar con el plan actual de mantenimiento.</li>'}</ul>
+                </div>
+            `;
+        }
+
+        // --- Genera el análisis IA en texto plano para inyectarlo al Excel ---
+        async function obtenerAnalisisParaExcel() {
+            const snapshot = await solicitudesRef.once('value');
+            const registros = snapshot.val() || {};
+            const lista = Object.values(registros);
+            if (lista.length === 0) return null;
+
+            const metricas = calcularMetricasParaIA(lista);
+
+            const filasMetricas = [
+                ['Total de solicitudes', metricas.totalFallas],
+                ['MTTR (min)', metricas.mttr],
+                ['Tiempo total de parada (min)', metricas.tiempoParadaTotal],
+                ['Tiempo total de parada (hs)', (metricas.tiempoParadaTotal / 60).toFixed(1)],
+                ['Máquina con más fallas', metricas.maquinaTop ? `${metricas.maquinaTop.nombre} (${metricas.maquinaTop.cantidad})` : 'N/A'],
+                ['Técnico con más intervenciones', metricas.tecnicoTop ? `${metricas.tecnicoTop.nombre} (${metricas.tecnicoTop.cantidad})` : 'N/A'],
+                ['Tipo de falla más frecuente', metricas.tipoTop ? `${metricas.tipoTop.nombre} (${metricas.tipoTop.cantidad})` : 'N/A'],
+                ['Causa más frecuente', metricas.causaTop ? `${metricas.causaTop.nombre} (${metricas.causaTop.cantidad})` : 'N/A']
+            ];
+
+            // Intentar análisis con Gemini en texto plano
+            let lineasAnalisis = [];
+            try {
+                const apiKey = "";
+                if (apiKey) {
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+                    const prompt = `Eres experto en mantenimiento industrial. Genera un análisis ejecutivo en ESPAÑOL de 6-8 líneas (texto plano, sin markdown, sin numeración, una idea por línea) para estos KPIs de BOLPAR S.A.:
+
+Total de solicitudes: ${metricas.totalFallas}
+MTTR: ${metricas.mttr} min
+Tiempo total de parada: ${metricas.tiempoParadaTotal} min
+Máquina con más fallas: ${metricas.maquinaTop ? metricas.maquinaTop.nombre + ' (' + metricas.maquinaTop.cantidad + ')' : 'N/A'}
+Causa más frecuente: ${metricas.causaTop ? metricas.causaTop.nombre + ' (' + metricas.causaTop.cantidad + ')' : 'N/A'}
+Tipo de falla más frecuente: ${metricas.tipoTop ? metricas.tipoTop.nombre + ' (' + metricas.tipoTop.cantidad + ')' : 'N/A'}
+
+Incluye hallazgos y recomendaciones accionables. Sin títulos. Solo las líneas.`;
+                    const r = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    if (r.ok) {
+                        const d = await r.json();
+                        const t = d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        lineasAnalisis = t.split('\n').map(l => l.replace(/^[-*•\d.\s]+/, '').trim()).filter(Boolean);
+                    }
+                }
+            } catch (err) {
+                console.warn('Análisis IA no disponible para Excel, usando fallback:', err);
+            }
+
+            if (lineasAnalisis.length === 0) {
+                lineasAnalisis = [
+                    `Resumen: ${metricas.totalFallas} solicitudes registradas con un tiempo total de parada de ${metricas.tiempoParadaTotal} min (${(metricas.tiempoParadaTotal / 60).toFixed(1)} hs).`,
+                    `MTTR promedio: ${metricas.mttr} min por intervención.`,
+                    metricas.maquinaTop ? `Máquina más afectada: ${metricas.maquinaTop.nombre} con ${metricas.maquinaTop.cantidad} fallas.` : '',
+                    metricas.causaTop ? `Causa predominante: ${metricas.causaTop.nombre} (${metricas.causaTop.cantidad} casos).` : '',
+                    metricas.tipoTop ? `Tipo de falla más común: ${metricas.tipoTop.nombre} (${metricas.tipoTop.cantidad} casos).` : '',
+                    'Recomendación: priorizar mantenimiento preventivo en las máquinas con más fallas.',
+                    'Recomendación: revisar los procedimientos asociados a la causa predominante.'
+                ].filter(Boolean);
+            }
+
+            return { metricas: filasMetricas, lineasAnalisis };
+        }
+
+        // --- EXPORTAR EXCEL CON IA ---
         async function exportarExcel() {
-            mostrarToast('📊 Generando Excel...', 'info');
+            mostrarToast('📊 Generando Excel con análisis IA...', 'info');
             try {
                 const snapshot = await solicitudesRef.orderByChild('numero_solicitud').once('value');
                 const registros = snapshot.val();
-                if (!registros) return;
-                const data = Object.keys(registros).map(k => ({
-                    'Nº Solicitud': registros[k].numero_solicitud || '',
-                    'Fecha': registros[k].fecha || '',
-                    'Máquina': registros[k].maquina || '',
-                    'Técnico': registros[k].tecnico || '',
-                    'Jefe': registros[k].jefe || '',
-                    'Estado': registros[k].estado || 'Finalizada',
-                    'Descripción': registros[k].descripcion || ''
-                }));
+                if (!registros) {
+                    mostrarToast('❌ No hay registros para exportar.', 'error');
+                    return;
+                }
+
+                // Hoja 1: Datos completos
+                const data = Object.keys(registros).map(k => {
+                    const r = registros[k];
+                    return {
+                        'Nº Solicitud': r.numero_solicitud || '',
+                        'Fecha': r.fecha || '',
+                        'Máquina': r.maquina || '',
+                        'Técnico': r.tecnico || '',
+                        'Jefe': r.jefe || '',
+                        'Hora Solicitud': r.hora_solicitud || '',
+                        'Hora Llegada': r.hora_llegada || '',
+                        'Hora Fin': r.hora_finalizacion || '',
+                        'Duración (min)': r.duracion || '',
+                        'Estado': r.estado || 'Finalizada',
+                        'Descripción': r.descripcion || ''
+                    };
+                });
+
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.json_to_sheet(data);
                 XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
-                XLSX.writeFile(wb, 'Solicitudes_BOLPAR.xlsx');
-                mostrarToast('✅ Excel exportado.', 'success');
-            } catch (err) { mostrarToast('❌ Error exportando Excel: ' + err.message, 'error'); }
-        }
-        async function exportarPDF() {
-            mostrarToast('📄 Generando PDF...', 'info');
-            try {
-                const element = document.querySelector('.container');
-                const botonesFirma = document.querySelectorAll('.firma-botones');
-                botonesFirma.forEach(el => el.style.display = 'none');
-                const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-                const imgHeight = (canvas.height * 210) / canvas.width;
-                pdf.addImage(imgData, 'PNG', 0, 0, 210, imgHeight);
-                pdf.save('Solicitud_BOLPAR.pdf');
-                mostrarToast('✅ PDF exportado.', 'success');
-                botonesFirma.forEach(el => el.style.display = 'flex');
-            } catch (err) { mostrarToast('❌ Error exportando PDF: ' + err.message, 'error'); }
+
+                // Hoja 2: Análisis IA de los datos exportados
+                try {
+                    const analisis = await obtenerAnalisisParaExcel();
+                    if (analisis) {
+                        const aoaIA = [
+                            ['ANÁLISIS INTELIGENTE DE KPIs — BOLPAR S.A.'],
+                            ['Generado', new Date().toLocaleString('es-ES')],
+                            [],
+                            ['MÉTRICA', 'VALOR'],
+                            ...analisis.metricas,
+                            [],
+                            ['ANÁLISIS Y RECOMENDACIONES'],
+                            ...analisis.lineasAnalisis.map(t => [t])
+                        ];
+                        const wsIA = XLSX.utils.aoa_to_sheet(aoaIA);
+                        wsIA['!cols'] = [{ wch: 38 }, { wch: 90 }];
+                        XLSX.utils.book_append_sheet(wb, wsIA, 'Análisis IA');
+                    }
+                } catch (errIA) {
+                    console.warn('No se pudo añadir el análisis IA al Excel:', errIA);
+                }
+
+                const fechaArchivo = new Date().toISOString().slice(0, 10);
+                XLSX.writeFile(wb, `Solicitudes_BOLPAR_${fechaArchivo}.xlsx`);
+                mostrarToast('✅ Excel exportado con hoja "Análisis IA".', 'success');
+            } catch (err) {
+                mostrarToast('❌ Error exportando Excel: ' + err.message, 'error');
+            }
         }
 
         function limpiarFormulario(mantenerNumero = false) {
@@ -1383,549 +3296,32 @@
             document.getElementById('duracion').value = '';
             document.getElementById('descripcion').value = '';
             document.getElementById('estado').value = 'Finalizada';
-            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('#app input[type="checkbox"]').forEach(cb => cb.checked = false);
             document.getElementById('otroTipoSelect').value = '';
             document.getElementById('otraCausaSelect').value = '';
             signaturePadTecnico.clear();
             signaturePadJefe.clear();
+
             document.querySelectorAll('.mensaje-error').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.campo-requerido').forEach(el => el.classList.remove('campo-requerido'));
+
             document.getElementById('editKey').value = '';
             document.getElementById('btnGuardar').textContent = '💾 GUARDAR';
+
             setFechaHoraActual();
             if (!mantenerNumero) cargarSugerenciaNumero();
+            limpiarTextoVoz();
             mostrarToast('🧹 Formulario reajustado.', 'info');
         }
 
-        // ================================================================
-        // ============ ASISTENTE IA POR VOZ (MEJORADO) ===================
-        // ================================================================
-
-        function obtenerMaquinasActuales() {
-            const select = document.getElementById('maquina');
-            return [...select.options].slice(1).map(o => o.value).filter(v => v);
-        }
-        function obtenerJefesActuales() {
-            const select = document.getElementById('jefeMaquina');
-            return [...select.options].slice(1).map(o => o.value).filter(v => v);
-        }
-
-        function normalizarTextoIA(str) {
-            return (str || '').toString().toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        // Búsqueda difusa mejorada: tolera errores leves del micrófono como "pinto" por "pintos"
-        function buscarEnListaIA(texto, lista) {
-            const textoNorm = ' ' + normalizarTextoIA(texto) + ' ';
-            let mejorItem = null;
-            let mejorScore = 0;
-
-            for (const item of lista) {
-                const itemNorm = normalizarTextoIA(item);
-                
-                // 1. Coincidencia exacta (rápida y perfecta)
-                const regex = new RegExp('(^|[^a-z0-9])' + itemNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-z0-9])', 'i');
-                if (regex.test(textoNorm)) {
-                    return item; 
-                }
-
-                // 2. Coincidencia difusa (por si el micrófono se comió una letra)
-                const palabrasItem = itemNorm.split(' ');
-                let palabrasEncontradas = 0;
-                
-                for (const palabra of palabrasItem) {
-                    if (palabra.length < 3) continue; // Ignorar palabras cortas
-                    
-                    if (textoNorm.includes(palabra)) {
-                        palabrasEncontradas++;
-                    } else {
-                        // Permitir 1 o 2 letras de diferencia al final (ej: "pinto" -> "pintos")
-                        const parteInicial = palabra.substring(0, Math.max(3, palabra.length - 1));
-                        const regexFuzzy = new RegExp('\\b' + parteInicial + '[a-z]*\\b', 'i');
-                        if (regexFuzzy.test(textoNorm)) {
-                            palabrasEncontradas++;
-                        }
-                    }
-                }
-                
-                if (palabrasItem.length > 0) {
-                    const score = palabrasEncontradas / palabrasItem.length;
-                    if (score > mejorScore) {
-                        mejorScore = score;
-                        mejorItem = item;
-                    }
-                }
-            }
-
-            // Si coincide al menos el 50% de las palabras, lo aceptamos
-            if (mejorScore >= 0.5) {
-                return mejorItem;
-            }
-            return null;
-        }
-
-        function extraerHoraIA(texto, palabrasClave) {
-            const limpio = texto.replace(/(\d{1,2})[.,](\d{2})/g, '$1:$2');
-            
-            // Busca "finalizacion 14:25" o "finalizacion 14 25" o "finalizacion 14 y 25"
-            const patron = new RegExp('(?:' + palabrasClave.join('|') + ')[^0-9]{0,30}(\\d{1,2})(?::|\\s+y\\s+|\\s+)(\\d{2})', 'i');
-            const match = limpio.match(patron);
-            if (match) {
-                let h = parseInt(match[1], 10);
-                let m = parseInt(match[2], 10);
-                if (h >= 0 && h < 24 && m >= 0 && m < 60) {
-                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-                }
-            }
-            
-            // Busca "a las 14 25"
-            const patron2 = /(?:a\s+las?|tipo)\s*(\d{1,2})(?::|\s+y\s+|\s+)(\d{2})/i;
-            const m2 = limpio.match(patron2);
-            if (m2) {
-                let h = parseInt(m2[1], 10);
-                let m = parseInt(m2[2], 10);
-                if (h >= 0 && h < 24 && m >= 0 && m < 60) {
-                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-                }
-            }
-            
-            // Busca solo la hora (ej: "finalización 14")
-            const patron3 = new RegExp('(?:' + palabrasClave.join('|') + ')[^0-9]{0,30}(\\d{1,2})\\b(?![\\s:]*\\d)', 'i');
-            const m3 = limpio.match(patron3);
-            if (m3) {
-                let h = parseInt(m3[1], 10);
-                if (h >= 0 && h < 24) return String(h).padStart(2, '0') + ':00';
-            }
-            return null;
-        }
-
-        function parsearComandoIA(textoOriginal) {
-            const datos = {};
-            const texto = textoOriginal || '';
-            const textoNorm = normalizarTextoIA(texto);
-
-            // 1) Máquina
-            const maquinas = obtenerMaquinasActuales();
-            const maquina = buscarEnListaIA(texto, maquinas);
-            if (maquina) datos.maquina = maquina;
-
-            // 2) Técnico
-            const tecnico = buscarEnListaIA(texto, TECNICOS_LISTA);
-            if (tecnico) datos.tecnico = tecnico;
-
-            // 3) Jefe
-            const jefes = obtenerJefesActuales();
-            const jefe = buscarEnListaIA(texto, jefes);
-            if (jefe) datos.jefe = jefe;
-
-            // 4) Horas
-            const horaLlegada = extraerHoraIA(texto, ['llegada', 'llego', 'llega', 'arribo', 'arriba', 'entro', 'entra', 'ingreso', 'ingresa']);
-            if (horaLlegada) datos.hora_llegada = horaLlegada;
-
-            const horaFin = extraerHoraIA(texto, ['finalizacion', 'finaliza', 'finalizo', 'termino', 'termina', 'terminado', 'salida', 'salgo', 'salio', 'fin']);
-            if (horaFin) datos.hora_finalizacion = horaFin;
-
-            // 5) Tipo de problema
-            if (/mecanic/.test(textoNorm)) datos.tipo_mecanico = true;
-            if (/electric/.test(textoNorm)) datos.tipo_electrico = true;
-            if (/hidraulic/.test(textoNorm)) datos.tipo_hidraulico = true;
-            if (/instalaci/.test(textoNorm)) datos.tipo_instalaciones = true;
-            if (/ajuste\s+operacional|ajuste\s+de\s+maquina|ajuste\s+de\s+la\s+maquina/.test(textoNorm)) datos.tipo_ajuste = true;
-            if (/software/.test(textoNorm)) { datos.tipo_otro = true; datos.tipo_otro_especificar = 'Software'; }
-            if (/neumatic/.test(textoNorm)) { datos.tipo_otro = true; datos.tipo_otro_especificar = 'Neumático'; }
-            if (/estructural/.test(textoNorm)) { datos.tipo_otro = true; datos.tipo_otro_especificar = 'Estructural'; }
-            if (/ruido\s+anormal|ruido\s+raro/.test(textoNorm)) { datos.tipo_otro = true; datos.tipo_otro_especificar = 'Ruido anormal'; }
-
-            // 6) Causa
-            if (/desgaste/.test(textoNorm)) datos.causa_desgaste = true;
-            if (/mal\s*ajuste/.test(textoNorm)) datos.causa_mal_ajuste = true;
-            if (/falta\s+de\s+lubricacion/.test(textoNorm)) { datos.causa_otro = true; datos.causa_otro_especificar = 'Falta de lubricación'; }
-            if (/sobrecarga/.test(textoNorm)) { datos.causa_otro = true; datos.causa_otro_especificar = 'Sobrecarga'; }
-            if (/error\s+(de|del)\s+operador|error\s+humano/.test(textoNorm)) { datos.causa_otro = true; datos.causa_otro_especificar = 'Error de operador'; }
-
-            // 7) Capacitación
-            if (/capacitacion\s+(si|realizada|hecha|ok)|(realice|hice|dimos?)\s+(la\s+)?capacitacion/.test(textoNorm)) {
-                datos.cap_si = true;
-            } else if (/capacitacion\s+(no|pendiente)|no\s+(se\s+)?(realizo|hizo|dimos?)\s+(la\s+)?capacitacion/.test(textoNorm)) {
-                datos.cap_no = true;
-            }
-
-            // 8) Estado
-            if (/\bfinalizad|\bterminad|\bcompletad/.test(textoNorm)) datos.estado = 'Finalizada';
-            else if (/en\s+curso|en\s+proceso|trabajando/.test(textoNorm)) datos.estado = 'En curso';
-            else if (/pendiente|por\s+hacer|sin\s+empezar/.test(textoNorm)) datos.estado = 'Pendiente';
-            else if (/cancelad/.test(textoNorm)) datos.estado = 'Cancelada';
-
-            // 9) Descripción (CORREGIDO: Ahora se corta en palabras de tiempo o secciones para no capturar toda la frase)
-            let descripcion = null;
-            const patronDesc = /(?:descripcion|trabajos?\s+realizados?|se\s+realizo|se\s+hizo|se\s+procedio|detalle|se\s+cambio|se\s+reemplazo|se\s+reparo|se\s+ajusto|se\s+limipo|se\s+limpio|se\s+lubrico|se\s+verifico|se\s+reviso)[:\s]+(.+?)(?=\s+(?:llegada|salida|finalizacion|termino|maquina|tecnico|jefe|estado|tipo\s+de|causa|capacitacion)|$)/i;
-            const matchDesc = texto.match(patronDesc);
-            if (matchDesc) {
-                descripcion = matchDesc[1].trim();
-            }
-            
-            if (!descripcion) {
-                const patron2 = /descripcion[:\s]+(.+)$/i;
-                const m2 = texto.match(patron2);
-                if (m2) descripcion = m2[1].trim();
-            }
-            
-            // Si no hay descripción clara, limpiamos el texto quitando lo ya detectado
-            if (!descripcion) {
-                let textoLimpio = texto;
-                if (datos.maquina) textoLimpio = textoLimpio.replace(new RegExp(datos.maquina, 'ig'), '');
-                if (datos.tecnico) textoLimpio = textoLimpio.replace(new RegExp(datos.tecnico, 'ig'), '');
-                if (datos.jefe) textoLimpio = textoLimpio.replace(new RegExp(datos.jefe, 'ig'), '');
-                textoLimpio = textoLimpio.replace(/(maquina|tecnico|jefe|descripcion|trabajo|de|la|el|los|las|ahora|salida|llegada|finalizacion)/ig, ' ').trim();
-                textoLimpio = textoLimpio.replace(/\s+/g, ' ');
-                if (textoLimpio.length > 10) descripcion = textoLimpio;
-            }
-            
-            if (descripcion) datos.descripcion = descripcion;
-
-            return datos;
-        }
-
-        // --- Reconocimiento de voz Anti-Eco ---
-        function initReconocimientoIA() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return null;
-            const rec = new SpeechRecognition();
-            rec.lang = 'es-UY';
-            rec.continuous = true;
-            rec.interimResults = true;
-            rec.maxAlternatives = 1;
-
-            rec.onresult = (event) => {
-                let interim = '';
-                let finalStr = '';
-                
-                // Recorremos los resultados. Si ya fue procesado, lo saltamos.
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const result = event.results[i];
-                    const transcript = result[0].transcript;
-                    
-                    if (result.isFinal) {
-                        if (!result._procesado) {
-                            finalStr += transcript + ' ';
-                            result._procesado = true;
-                        }
-                    } else {
-                        interim += transcript;
-                    }
-                }
-                
-                const textarea = document.getElementById('iaTextoComando');
-                if (finalStr) {
-                    textoBaseIA += finalStr;
-                    textarea.value = textoBaseIA.trim();
-                }
-                
-                if (interim) {
-                    document.getElementById('iaMicStatus').textContent = '👂 ' + interim;
-                } else {
-                    document.getElementById('iaMicStatus').textContent = '🎙️ Escuchando...';
-                }
-            };
-
-            rec.onerror = (event) => {
-                console.warn('Error reconocimiento:', event.error);
-                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    mostrarToast('❌ Permiso de micrófono denegado.', 'error');
-                } else if (event.error === 'no-speech') {
-                    document.getElementById('iaMicStatus').textContent = 'No se detectó voz. Intentá de nuevo.';
-                } else {
-                    document.getElementById('iaMicStatus').textContent = '⚠️ Error: ' + event.error;
-                }
-                detenerReconocimientoIA();
-            };
-
-            rec.onend = () => {
-                if (escuchandoIA) {
-                    try { rec.start(); } catch (e) { /* ya iniciado */ }
-                } else {
-                    document.getElementById('btnMic').classList.remove('escuchando');
-                    document.getElementById('btnMic').textContent = '🎤';
-                    if (document.getElementById('iaMicStatus').textContent.startsWith('👂')) {
-                        document.getElementById('iaMicStatus').textContent = 'Detenido. Podés analizar el comando.';
-                    }
-                }
-            };
-
-            return rec;
-        }
-
-        function toggleReconocimientoIA() {
-            if (!recognitionIA) {
-                recognitionIA = initReconocimientoIA();
-            }
-            if (!recognitionIA) {
-                mostrarToast('❌ Este navegador no soporta dictado por voz.', 'error');
-                return;
-            }
-            if (escuchandoIA) {
-                detenerReconocimientoIA();
-            } else {
-                iniciarReconocimientoIA();
-            }
-        }
-
-        function iniciarReconocimientoIA() {
-            try {
-                // Guardamos lo que ya estaba escrito en el textarea para no perderlo
-                textoBaseIA = document.getElementById('iaTextoComando').value;
-                if (textoBaseIA && !textoBaseIA.endsWith(' ')) textoBaseIA += ' ';
-
-                recognitionIA.start();
-                escuchandoIA = true;
-                document.getElementById('btnMic').classList.add('escuchando');
-                document.getElementById('btnMic').textContent = '⏹️';
-                document.getElementById('iaMicStatus').textContent = '🎙️ Escuchando... hablá ahora';
-            } catch (err) {
-                console.warn('Error al iniciar reconocimiento:', err);
-                mostrarToast('⚠️ No se pudo iniciar el micrófono.', 'error');
-            }
-        }
-
-        function detenerReconocimientoIA() {
-            escuchandoIA = false;
-            if (recognitionIA) {
-                try { recognitionIA.stop(); } catch (e) {}
-            }
-            document.getElementById('btnMic').classList.remove('escuchando');
-            document.getElementById('btnMic').textContent = '🎤';
-            document.getElementById('iaMicStatus').textContent = 'Detenido. Presioná de nuevo para seguir dictando.';
-        }
-
-        function limpiarComandoIA() {
-            document.getElementById('iaTextoComando').value = '';
-            textoBaseIA = '';
-            document.getElementById('iaMicStatus').textContent = 'Presioná el micrófono para dictar';
-        }
-
-        function abrirModalIA() {
-            document.getElementById('modalIA').style.display = 'flex';
-            document.getElementById('iaPasoCaptura').style.display = 'block';
-            document.getElementById('iaPasoPreview').style.display = 'none';
-            document.getElementById('iaTextoComando').value = '';
-            textoBaseIA = '';
-            document.getElementById('iaMicStatus').textContent = 'Presioná el micrófono para dictar';
-            setTimeout(() => document.getElementById('iaTextoComando').focus(), 200);
-        }
-
-        function cerrarModalIA() {
-            detenerReconocimientoIA();
-            document.getElementById('modalIA').style.display = 'none';
-        }
-
-        function analizarComandoIA() {
-            const texto = document.getElementById('iaTextoComando').value.trim();
-            if (!texto) {
-                mostrarToast('⚠️ Primero dictá o escribí un comando.', 'error');
-                return;
-            }
-            detenerReconocimientoIA();
-            datosPrevisualizadosIA = parsearComandoIA(texto);
-            renderizarPreviewIA(texto);
-        }
-
-        function renderizarPreviewIA(textoOriginal) {
-            const contenedor = document.getElementById('iaPreviewContenido');
-            const d = datosPrevisualizadosIA;
-            const maquinas = obtenerMaquinasActuales();
-            const jefes = obtenerJefesActuales();
-
-            const campos = [];
-
-            if (d.maquina !== undefined) campos.push(crearCampoPreview('maquina', 'Máquina', 'select', d.maquina, maquinas, true, false));
-            if (d.tecnico !== undefined) campos.push(crearCampoPreview('tecnico', 'Técnico', 'select', d.tecnico, TECNICOS_LISTA, true, false));
-            if (d.jefe !== undefined) campos.push(crearCampoPreview('jefe', 'Jefe de Máquina', 'select', d.jefe, jefes, true, false));
-            if (d.hora_llegada) campos.push(crearCampoPreview('hora_llegada', 'Hora Llegada', 'time', d.hora_llegada, null, true, false));
-            if (d.hora_finalizacion) campos.push(crearCampoPreview('hora_finalizacion', 'Hora Finalización', 'time', d.hora_finalizacion, null, true, false));
-            if (d.estado) campos.push(crearCampoPreview('estado', 'Estado', 'select', d.estado, ['Finalizada', 'Pendiente', 'En curso', 'Cancelada'], true, false));
-            
-            const tipos = [];
-            if (d.tipo_mecanico) tipos.push('Mecánico');
-            if (d.tipo_electrico) tipos.push('Eléctrico');
-            if (d.tipo_hidraulico) tipos.push('Hidráulico');
-            if (d.tipo_instalaciones) tipos.push('Instalaciones');
-            if (d.tipo_ajuste) tipos.push('Ajuste Operacional');
-            if (d.tipo_otro) tipos.push('Otros: ' + (d.tipo_otro_especificar || ''));
-            if (tipos.length) campos.push(crearCampoPreviewTexto('tipo_problema', 'Tipo de Problema', tipos.join(', '), true));
-            
-            const causas = [];
-            if (d.causa_desgaste) causas.push('Desgaste');
-            if (d.causa_mal_ajuste) causas.push('Mal Ajuste');
-            if (d.causa_otro) causas.push('Otros: ' + (d.causa_otro_especificar || ''));
-            if (causas.length) campos.push(crearCampoPreviewTexto('causa', 'Causa', causas.join(', '), true));
-            
-            if (d.cap_si) campos.push(crearCampoPreview('capacitacion', 'Capacitación', 'select', 'SI', ['SI', 'NO'], true, false));
-            else if (d.cap_no) campos.push(crearCampoPreview('capacitacion', 'Capacitación', 'select', 'NO', ['SI', 'NO'], true, false));
-
-            if (d.descripcion) campos.push(crearCampoPreviewTextoArea('descripcion', 'Descripción', d.descripcion, true));
-
-            if (campos.length === 0) {
-                contenedor.innerHTML = `
-                    <div style="padding:20px; text-align:center; color:#c0392b; background:#fadbd8; border-radius:6px;">
-                        ⚠️ No se detectaron datos reconocibles en el comando.<br>
-                        <span style="font-size:8pt;">Probá mencionando máquina, técnico, falla, horas o descripción.</span>
-                    </div>
-                `;
-            } else {
-                contenedor.innerHTML = campos.join('');
-            }
-
-            const headerTrans = `
-                <div style="background:#f1f5f9; padding:8px 10px; border-radius:6px; margin-bottom:10px; font-size:8.5pt; color:#334155; border-left:3px solid #8e44ad;">
-                    <strong>📝 Comando original:</strong><br>
-                    <em>"${textoOriginal}"</em>
-                </div>
-            `;
-            contenedor.innerHTML = headerTrans + contenedor.innerHTML;
-
-            document.querySelectorAll('#iaPreviewContenido .preview-field input[type="checkbox"]').forEach(chk => {
-                chk.addEventListener('change', function() {
-                    const field = this.closest('.preview-field');
-                    field.classList.toggle('desactivado', !this.checked);
-                });
-            });
-
-            document.getElementById('iaPasoCaptura').style.display = 'none';
-            document.getElementById('iaPasoPreview').style.display = 'block';
-        }
-
-        function crearCampoPreview(key, label, tipo, valor, opciones, checked, esAuto) {
-            const badge = esAuto ? '<span class="pf-badge auto">auto</span>' : '<span class="pf-badge">detectado</span>';
-            let inputHTML = '';
-            if (tipo === 'select') {
-                const opts = (opciones || []).map(o => `<option value="${o}" ${o === valor ? 'selected' : ''}>${o}</option>`).join('');
-                inputHTML = `<select data-key="${key}">${opts}</select>`;
-            } else if (tipo === 'time') {
-                inputHTML = `<input type="time" data-key="${key}" value="${valor || ''}">`;
-            } else {
-                inputHTML = `<input type="text" data-key="${key}" value="${valor || ''}">`;
-            }
-            return `
-                <div class="preview-field ${checked ? '' : 'desactivado'}" data-field="${key}">
-                    <input type="checkbox" ${checked ? 'checked' : ''} data-toggle="${key}">
-                    <span class="pf-label">${label}</span>
-                    <div class="pf-valor">${inputHTML}</div>
-                    ${badge}
-                </div>
-            `;
-        }
-
-        function crearCampoPreviewTexto(key, label, valor, checked) {
-            return `
-                <div class="preview-field ${checked ? '' : 'desactivado'}" data-field="${key}">
-                    <input type="checkbox" ${checked ? 'checked' : ''} data-toggle="${key}">
-                    <span class="pf-label">${label}</span>
-                    <div class="pf-valor"><input type="text" data-key="${key}" value="${valor || ''}"></div>
-                    <span class="pf-badge">detectado</span>
-                </div>
-            `;
-        }
-
-        function crearCampoPreviewTextoArea(key, label, valor, checked) {
-            return `
-                <div class="preview-field ${checked ? '' : 'desactivado'}" data-field="${key}">
-                    <input type="checkbox" ${checked ? 'checked' : ''} data-toggle="${key}">
-                    <span class="pf-label">${label}</span>
-                    <div class="pf-valor"><textarea data-key="${key}">${valor || ''}</textarea></div>
-                    <span class="pf-badge">detectado</span>
-                </div>
-            `;
-        }
-
-        function volverCapturaIA() {
-            document.getElementById('iaPasoPreview').style.display = 'none';
-            document.getElementById('iaPasoCaptura').style.display = 'block';
-        }
-
-        function aplicarDatosIA() {
-            const seleccionados = {};
-            document.querySelectorAll('#iaPreviewContenido .preview-field').forEach(field => {
-                const toggle = field.querySelector('input[type="checkbox"]');
-                if (!toggle || !toggle.checked) return;
-                const key = field.dataset.field;
-                const input = field.querySelector('[data-key]');
-                if (input) seleccionados[key] = input.value;
-            });
-
-            if (seleccionados.maquina) {
-                asegurarOpcion('maquina', seleccionados.maquina);
-                document.getElementById('maquina').value = seleccionados.maquina;
-                if (datosMaquinas[seleccionados.maquina]) {
-                    const dm = datosMaquinas[seleccionados.maquina];
-                    document.getElementById('tecnico').value = dm.tecnico;
-                    document.getElementById('jefeMaquina').value = dm.jefe;
-                }
-            }
-            if (seleccionados.tecnico) document.getElementById('tecnico').value = seleccionados.tecnico;
-            if (seleccionados.jefe) {
-                asegurarOpcion('jefeMaquina', seleccionados.jefe);
-                document.getElementById('jefeMaquina').value = seleccionados.jefe;
-            }
-            if (seleccionados.hora_llegada) document.getElementById('horaLlegada').value = seleccionados.hora_llegada;
-            if (seleccionados.hora_finalizacion) document.getElementById('horaFinalizacion').value = seleccionados.hora_finalizacion;
-            if (seleccionados.estado) document.getElementById('estado').value = seleccionados.estado;
-            
-            if (seleccionados.tipo_problema) {
-                const t = seleccionados.tipo_problema;
-                if (/mecán/i.test(t)) document.getElementById('mecanico').checked = true;
-                if (/eléctric/i.test(t)) document.getElementById('electrico').checked = true;
-                if (/hidráulic/i.test(t)) document.getElementById('hidraulico').checked = true;
-                if (/instalaci/i.test(t)) document.getElementById('instalaciones').checked = true;
-                if (/ajuste/i.test(t)) document.getElementById('ajuste').checked = true;
-                const matchOtro = t.match(/otros[:\s]*([^,]+)/i);
-                if (matchOtro) {
-                    document.getElementById('otroTipoCheck').checked = true;
-                    const especificado = matchOtro[1].trim();
-                    const sel = document.getElementById('otroTipoSelect');
-                    for (let opt of sel.options) {
-                        if (opt.value && normalizarTextoIA(opt.value) === normalizarTextoIA(especificado)) { sel.value = opt.value; break; }
-                    }
-                }
-            }
-            if (seleccionados.causa) {
-                const c = seleccionados.causa;
-                if (/desgaste/i.test(c)) document.getElementById('desgaste').checked = true;
-                if (/mal\s*ajuste/i.test(c)) document.getElementById('malAjuste').checked = true;
-                const matchOtro = c.match(/otros[:\s]*([^,]+)/i);
-                if (matchOtro) {
-                    document.getElementById('otraCausaCheck').checked = true;
-                    const especificado = matchOtro[1].trim();
-                    const sel = document.getElementById('otraCausaSelect');
-                    for (let opt of sel.options) {
-                        if (opt.value && normalizarTextoIA(opt.value) === normalizarTextoIA(especificado)) { sel.value = opt.value; break; }
-                    }
-                }
-            }
-            if (seleccionados.capacitacion) {
-                if (seleccionados.capacitacion === 'SI') { document.getElementById('capSi').checked = true; document.getElementById('capNo').checked = false; }
-                if (seleccionados.capacitacion === 'NO') { document.getElementById('capNo').checked = true; document.getElementById('capSi').checked = false; }
-            }
-            if (seleccionados.descripcion) document.getElementById('descripcion').value = seleccionados.descripcion;
-
-            calcularDuracion();
-            cerrarModalIA();
-            mostrarToast('✅ Datos aplicados al formulario. Revisá y ajustá lo que falte.', 'success');
-        }
-
-        // ============ INICIALIZACIÓN ============
+        // --- INICIALIZACIÓN ---
         window.onload = function() {
             setFechaHoraActual();
             cargarSugerenciaNumero();
             initSignaturePads();
             sincronizarDatosOffline();
             cargarOpciones();
-
-            document.getElementById('modalIA').addEventListener('click', function(e) {
-                if (e.target === this) cerrarModalIA();
-            });
+            console.log('✅ App con IA por Voz lista.');
         };
     </script>
 </body>
