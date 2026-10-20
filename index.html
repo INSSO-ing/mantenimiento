@@ -1663,4 +1663,310 @@
                 recognitionIA.start();
                 escuchandoIA = true;
                 document.getElementById('btnMic').classList.add('escuchando');
-                document.getElementById('btnMic').textContent = '⏹️
+                document.getElementById('btnMic').textContent = '⏹️';
+                document.getElementById('iaMicStatus').textContent = '🎙️ Escuchando... hablá ahora';
+            } catch (err) {
+                console.warn('Error al iniciar reconocimiento:', err);
+                mostrarToast('⚠️ No se pudo iniciar el micrófono.', 'error');
+            }
+        }
+
+        function detenerReconocimientoIA() {
+            escuchandoIA = false;
+            if (recognitionIA) {
+                try { recognitionIA.stop(); } catch (e) {}
+            }
+            document.getElementById('btnMic').classList.remove('escuchando');
+            document.getElementById('btnMic').textContent = '🎤';
+            document.getElementById('iaMicStatus').textContent = 'Detenido. Presioná de nuevo para seguir dictando.';
+        }
+
+        function limpiarComandoIA() {
+            document.getElementById('iaTextoComando').value = '';
+            document.getElementById('iaMicStatus').textContent = 'Presioná el micrófono para dictar';
+        }
+
+        function abrirModalIA() {
+            document.getElementById('modalIA').style.display = 'flex';
+            document.getElementById('iaPasoCaptura').style.display = 'block';
+            document.getElementById('iaPasoPreview').style.display = 'none';
+            document.getElementById('iaTextoComando').value = '';
+            document.getElementById('iaMicStatus').textContent = 'Presioná el micrófono para dictar';
+            setTimeout(() => document.getElementById('iaTextoComando').focus(), 200);
+        }
+
+        function cerrarModalIA() {
+            detenerReconocimientoIA();
+            document.getElementById('modalIA').style.display = 'none';
+        }
+
+        function analizarComandoIA() {
+            const texto = document.getElementById('iaTextoComando').value.trim();
+            if (!texto) {
+                mostrarToast('⚠️ Primero dictá o escribí un comando.', 'error');
+                return;
+            }
+            detenerReconocimientoIA();
+            datosPrevisualizadosIA = parsearComandoIA(texto);
+            renderizarPreviewIA(texto);
+        }
+
+        // --- Renderizado de la previsualización ---
+        function renderizarPreviewIA(textoOriginal) {
+            const contenedor = document.getElementById('iaPreviewContenido');
+            const d = datosPrevisualizadosIA;
+            const maquinas = obtenerMaquinasActuales();
+            const jefes = obtenerJefesActuales();
+
+            const campos = [];
+
+            // Máquina
+            if (d.maquina !== undefined) {
+                campos.push(crearCampoPreview('maquina', 'Máquina', 'select', d.maquina, maquinas, true, false));
+            }
+            // Técnico
+            if (d.tecnico !== undefined) {
+                campos.push(crearCampoPreview('tecnico', 'Técnico', 'select', d.tecnico, TECNICOS_LISTA, true, false));
+            }
+            // Jefe
+            if (d.jefe !== undefined) {
+                campos.push(crearCampoPreview('jefe', 'Jefe de Máquina', 'select', d.jefe, jefes, true, false));
+            }
+            // Hora llegada
+            if (d.hora_llegada) {
+                campos.push(crearCampoPreview('hora_llegada', 'Hora Llegada', 'time', d.hora_llegada, null, true, false));
+            }
+            // Hora fin
+            if (d.hora_finalizacion) {
+                campos.push(crearCampoPreview('hora_finalizacion', 'Hora Finalización', 'time', d.hora_finalizacion, null, true, false));
+            }
+            // Estado
+            if (d.estado) {
+                campos.push(crearCampoPreview('estado', 'Estado', 'select', d.estado, ['Finalizada', 'Pendiente', 'En curso', 'Cancelada'], true, false));
+            }
+            // Tipo de problema (agrupado)
+            const tipos = [];
+            if (d.tipo_mecanico) tipos.push('Mecánico');
+            if (d.tipo_electrico) tipos.push('Eléctrico');
+            if (d.tipo_hidraulico) tipos.push('Hidráulico');
+            if (d.tipo_instalaciones) tipos.push('Instalaciones');
+            if (d.tipo_ajuste) tipos.push('Ajuste Operacional');
+            if (d.tipo_otro) tipos.push('Otros: ' + (d.tipo_otro_especificar || ''));
+            if (tipos.length) {
+                campos.push(crearCampoPreviewTexto('tipo_problema', 'Tipo de Problema', tipos.join(', '), true));
+            }
+            // Causa
+            const causas = [];
+            if (d.causa_desgaste) causas.push('Desgaste');
+            if (d.causa_mal_ajuste) causas.push('Mal Ajuste');
+            if (d.causa_otro) causas.push('Otros: ' + (d.causa_otro_especificar || ''));
+            if (causas.length) {
+                campos.push(crearCampoPreviewTexto('causa', 'Causa', causas.join(', '), true));
+            }
+            // Capacitación
+            if (d.cap_si) campos.push(crearCampoPreview('capacitacion', 'Capacitación', 'select', 'SI', ['SI', 'NO'], true, false));
+            else if (d.cap_no) campos.push(crearCampoPreview('capacitacion', 'Capacitación', 'select', 'NO', ['SI', 'NO'], true, false));
+
+            // Descripción (textarea editable)
+            if (d.descripcion) {
+                campos.push(crearCampoPreviewTextoArea('descripcion', 'Descripción', d.descripcion, true));
+            }
+
+            if (campos.length === 0) {
+                contenedor.innerHTML = `
+                    <div style="padding:20px; text-align:center; color:#c0392b; background:#fadbd8; border-radius:6px;">
+                        ⚠️ No se detectaron datos reconocibles en el comando.<br>
+                        <span style="font-size:8pt;">Probá mencionando máquina, técnico, falla, horas o descripción.</span>
+                    </div>
+                `;
+            } else {
+                contenedor.innerHTML = campos.join('');
+            }
+
+            // Mostrar también la transcripción original arriba
+            const headerTrans = `
+                <div style="background:#f1f5f9; padding:8px 10px; border-radius:6px; margin-bottom:10px; font-size:8.5pt; color:#334155; border-left:3px solid #8e44ad;">
+                    <strong>📝 Comando original:</strong><br>
+                    <em>"${textoOriginal}"</em>
+                </div>
+            `;
+            contenedor.innerHTML = headerTrans + contenedor.innerHTML;
+
+            // Bind de eventos checkbox → habilitar/deshabilitar campo
+            document.querySelectorAll('#iaPreviewContenido .preview-field input[type="checkbox"]').forEach(chk => {
+                chk.addEventListener('change', function() {
+                    const field = this.closest('.preview-field');
+                    field.classList.toggle('desactivado', !this.checked);
+                });
+            });
+
+            document.getElementById('iaPasoCaptura').style.display = 'none';
+            document.getElementById('iaPasoPreview').style.display = 'block';
+        }
+
+        function crearCampoPreview(key, label, tipo, valor, opciones, checked, esAuto) {
+            const badge = esAuto ? '<span class="pf-badge auto">auto</span>' : '<span class="pf-badge">detectado</span>';
+            let inputHTML = '';
+            if (tipo === 'select') {
+                const opts = (opciones || []).map(o => `<option value="${o}" ${o === valor ? 'selected' : ''}>${o}</option>`).join('');
+                inputHTML = `<select data-key="${key}">${opts}</select>`;
+            } else if (tipo === 'time') {
+                inputHTML = `<input type="time" data-key="${key}" value="${valor || ''}">`;
+            } else {
+                inputHTML = `<input type="text" data-key="${key}" value="${valor || ''}">`;
+            }
+            return `
+                <div class="preview-field ${checked ? '' : 'desactivado'}" data-field="${key}">
+                    <input type="checkbox" ${checked ? 'checked' : ''} data-toggle="${key}">
+                    <span class="pf-label">${label}</span>
+                    <div class="pf-valor">${inputHTML}</div>
+                    ${badge}
+                </div>
+            `;
+        }
+
+        function crearCampoPreviewTexto(key, label, valor, checked) {
+            return `
+                <div class="preview-field ${checked ? '' : 'desactivado'}" data-field="${key}">
+                    <input type="checkbox" ${checked ? 'checked' : ''} data-toggle="${key}">
+                    <span class="pf-label">${label}</span>
+                    <div class="pf-valor"><input type="text" data-key="${key}" value="${valor || ''}"></div>
+                    <span class="pf-badge">detectado</span>
+                </div>
+            `;
+        }
+
+        function crearCampoPreviewTextoArea(key, label, valor, checked) {
+            return `
+                <div class="preview-field ${checked ? '' : 'desactivado'}" data-field="${key}">
+                    <input type="checkbox" ${checked ? 'checked' : ''} data-toggle="${key}">
+                    <span class="pf-label">${label}</span>
+                    <div class="pf-valor"><textarea data-key="${key}">${valor || ''}</textarea></div>
+                    <span class="pf-badge">detectado</span>
+                </div>
+            `;
+        }
+
+        function volverCapturaIA() {
+            document.getElementById('iaPasoPreview').style.display = 'none';
+            document.getElementById('iaPasoCaptura').style.display = 'block';
+        }
+
+        // --- Aplicar los datos al formulario ---
+        function aplicarDatosIA() {
+            const seleccionados = {};
+            document.querySelectorAll('#iaPreviewContenido .preview-field').forEach(field => {
+                const toggle = field.querySelector('input[type="checkbox"]');
+                if (!toggle || !toggle.checked) return;
+                const key = field.dataset.field;
+                const input = field.querySelector('[data-key]');
+                if (input) {
+                    seleccionados[key] = input.value;
+                }
+            });
+
+            // 1) Máquina primero
+            if (seleccionados.maquina) {
+                asegurarOpcion('maquina', seleccionados.maquina);
+                document.getElementById('maquina').value = seleccionados.maquina;
+                // Auto-completar técnico/jefe según la máquina
+                if (datosMaquinas[seleccionados.maquina]) {
+                    const dm = datosMaquinas[seleccionados.maquina];
+                    document.getElementById('tecnico').value = dm.tecnico;
+                    document.getElementById('jefeMaquina').value = dm.jefe;
+                }
+            }
+            // 2) Sobrescribir técnico si el usuario lo especificó explícitamente
+            if (seleccionados.tecnico) {
+                document.getElementById('tecnico').value = seleccionados.tecnico;
+            }
+            // 3) Sobrescribir jefe
+            if (seleccionados.jefe) {
+                asegurarOpcion('jefeMaquina', seleccionados.jefe);
+                document.getElementById('jefeMaquina').value = seleccionados.jefe;
+            }
+            // 4) Horas
+            if (seleccionados.hora_llegada) {
+                document.getElementById('horaLlegada').value = seleccionados.hora_llegada;
+            }
+            if (seleccionados.hora_finalizacion) {
+                document.getElementById('horaFinalizacion').value = seleccionados.hora_finalizacion;
+            }
+            // 5) Estado
+            if (seleccionados.estado) {
+                document.getElementById('estado').value = seleccionados.estado;
+            }
+            // 6) Tipo de problema (por nombre de string)
+            if (seleccionados.tipo_problema) {
+                const t = seleccionados.tipo_problema;
+                if (/mecán/i.test(t)) document.getElementById('mecanico').checked = true;
+                if (/eléctric/i.test(t)) document.getElementById('electrico').checked = true;
+                if (/hidráulic/i.test(t)) document.getElementById('hidraulico').checked = true;
+                if (/instalaci/i.test(t)) document.getElementById('instalaciones').checked = true;
+                if (/ajuste/i.test(t)) document.getElementById('ajuste').checked = true;
+                const matchOtro = t.match(/otros[:\s]*([^,]+)/i);
+                if (matchOtro) {
+                    document.getElementById('otroTipoCheck').checked = true;
+                    const especificado = matchOtro[1].trim();
+                    const sel = document.getElementById('otroTipoSelect');
+                    // Buscar coincidencia
+                    for (let opt of sel.options) {
+                        if (opt.value && normalizarTextoIA(opt.value) === normalizarTextoIA(especificado)) {
+                            sel.value = opt.value;
+                            break;
+                        }
+                    }
+                }
+            }
+            // 7) Causa
+            if (seleccionados.causa) {
+                const c = seleccionados.causa;
+                if (/desgaste/i.test(c)) document.getElementById('desgaste').checked = true;
+                if (/mal\s*ajuste/i.test(c)) document.getElementById('malAjuste').checked = true;
+                const matchOtro = c.match(/otros[:\s]*([^,]+)/i);
+                if (matchOtro) {
+                    document.getElementById('otraCausaCheck').checked = true;
+                    const especificado = matchOtro[1].trim();
+                    const sel = document.getElementById('otraCausaSelect');
+                    for (let opt of sel.options) {
+                        if (opt.value && normalizarTextoIA(opt.value) === normalizarTextoIA(especificado)) {
+                            sel.value = opt.value;
+                            break;
+                        }
+                    }
+                }
+            }
+            // 8) Capacitación
+            if (seleccionados.capacitacion) {
+                if (seleccionados.capacitacion === 'SI') { document.getElementById('capSi').checked = true; document.getElementById('capNo').checked = false; }
+                if (seleccionados.capacitacion === 'NO') { document.getElementById('capNo').checked = true; document.getElementById('capSi').checked = false; }
+            }
+            // 9) Descripción
+            if (seleccionados.descripcion) {
+                document.getElementById('descripcion').value = seleccionados.descripcion;
+            }
+
+            // Recalcular duración
+            calcularDuracion();
+
+            // Cerrar modal + feedback
+            cerrarModalIA();
+            mostrarToast('✅ Datos aplicados al formulario. Revisá y ajustá lo que falte.', 'success');
+        }
+
+        // ============ INICIALIZACIÓN ============
+        window.onload = function() {
+            setFechaHoraActual();
+            cargarSugerenciaNumero();
+            initSignaturePads();
+            sincronizarDatosOffline();
+            cargarOpciones();
+
+            // Cerrar modal IA al hacer click en el fondo
+            document.getElementById('modalIA').addEventListener('click', function(e) {
+                if (e.target === this) cerrarModalIA();
+            });
+        };
+    </script>
+</body>
+</html>
