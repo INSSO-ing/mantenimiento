@@ -2774,7 +2774,8 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
                     jefe: registros[key].jefe || 'N/E',
                     descripcion: registros[key].descripcion || '',
                     estado: registros[key].estado || 'Finalizada',
-                    timestamp: registros[key].timestamp || 0
+                    timestamp: registros[key].timestamp || 0,
+                    duracion: registros[key].duracion || '0'
                 })).sort((a, b) => a.numero - b.numero);
 
                 listaRegistrosCache = items;
@@ -2803,6 +2804,7 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
                             <span>👤 ${item.tecnico}</span>
                             <span class="registro-desc-preview" title="${descTexto}">📝 <b>Trabajo:</b> ${descTexto}</span>
                             <span class="estado-badge ${estadoClase}">${item.estado}</span>
+                            <span style="color:#d68910; font-weight:bold; font-size:8pt;">⏱️ ${item.duracion} min</span>
                             <span style="color:#888; font-size:7.5pt;">${ts}</span>
                         </div>
                         <div class="acciones">
@@ -2917,7 +2919,7 @@ NOTA CRÍTICA: Ignora repeticiones y errores fonéticos.
 
                 const causa = data.causa || {};
                 document.getElementById('desgaste').checked = causa.desgaste || false;
-                document.getElementById('malAjuste').checked = causa.mal_ajuste || false;
+                document.getElementById('malAjuste').checked = causa.malAjuste || false;
                 document.getElementById('otraCausaCheck').checked = causa.otros || false;
                 document.getElementById('otraCausaSelect').value = causa.otro_especificar || '';
 
